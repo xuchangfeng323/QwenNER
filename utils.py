@@ -45,17 +45,15 @@ def build_label_mappings(labels, save_path=None):
 
 def load_data(config):
     data_dir=config.data_path
-    train_dataset = WeiboNerDataset(os.path.join(data_dir, 'train.txt'), config.tokenizer, config.max_length, config.align_type)
-    test_dataset = WeiboNerDataset(os.path.join(data_dir, 'test.txt'), config.tokenizer, config.max_length, config.align_type)
-    dev_dataset = WeiboNerDataset(os.path.join(data_dir, 'dev.txt'), config.tokenizer, config.max_length, config.align_type)
+    train_dataset = WeiboNerDataset(os.path.join(data_dir, 'train.json'), config.tokenizer, config.max_length, config.align_type)
+    test_dataset = WeiboNerDataset(os.path.join(data_dir, 'test.json'), config.tokenizer, config.max_length, config.align_type)
+    dev_dataset = WeiboNerDataset(os.path.join(data_dir, 'dev.json'), config.tokenizer, config.max_length, config.align_type)
 
-    label2id, id2label = build_label_mappings(train_dataset.label_list+test_dataset.label_list+dev_dataset.label_list, save_path=os.path.join(data_dir, 'label2id.json'))
+    label2id, id2label = build_label_mappings(train_dataset.get_entities()+test_dataset.get_entities()+dev_dataset.get_entities(), save_path=os.path.join(data_dir, 'label2id.json'))
     config.set_mapping(label2id,id2label)
     train_dataset.set_label2id(label2id)
     test_dataset.set_label2id(label2id)
     dev_dataset.set_label2id(label2id)
-    
-    
     train_dataLoader = train_dataset.get_data_loader(batch_size=config.batch_size)
     dev_dataLoader = dev_dataset.get_data_loader(batch_size=config.batch_size,shuffle=False)
     test_dataLoader = test_dataset.get_data_loader(batch_size=config.batch_size,shuffle=False)
@@ -86,8 +84,8 @@ class Metrics:
         
         for pred_seq, label_seq in zip(predictions, labels):
             
-            pred_str = [self.id2label.get(p, 'O') for p, l in zip(pred_seq, label_seq) if l != -100]
-            true_str = [self.id2label.get(l, 'O') for l in label_seq if l != -100]
+            pred_str = [self.id2label.get(p) for p, l in zip(pred_seq, label_seq) if l != -100]
+            true_str = [self.id2label.get(l) for l in label_seq if l != -100]
             self.all_true_entities.update(self._extract_entities(true_str, self.seq_count))
             self.all_pred_entities.update(self._extract_entities(pred_str, self.seq_count))
             self.seq_count += 1
@@ -261,6 +259,8 @@ class EarlyStop():
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict(),
             'scheduler': scheduler.state_dict(),
+            'peft_config': model.qwen.peft_config,
+            'base_model_name': self.config.model_dir,
         }
         if is_best and self.best_model_path is not None:
             os.remove(self.best_model_path)
@@ -278,7 +278,7 @@ class Arguments:
         for key, value in self.args_dict.items():
             setattr(self, key, value)
         self._set_seed()
-        self.tokenizer = BertTokenizerFast.from_pretrained(self.model_dir)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir, trust_remote_code=True)
         
     def _set_seed(self):
         seed = self.args_dict.get('seed', 42)

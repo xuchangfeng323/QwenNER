@@ -1,7 +1,7 @@
 import swanlab
 from tqdm import tqdm
 import torch
-from model import Bert4NER
+from model import Qwen4NER
 import argparse
 import torch.nn as nn
 from transformers import  get_scheduler
@@ -36,12 +36,13 @@ class Trainer:
         model.to(self.device)
         swanlab.init(
             project="weibo_ner",  
-            name="bert4ner",                
+            name="qwen2.5-ner",
             config={
                 "num_epochs": self.config.num_epochs,
                 "lr": self.config.lr,
                 "batch_size": self.config.batch_size,
-                "model": "bert-base-chinese"
+                "model": self.config.model_name,
+
             }
         )
         write_log(self.log_dir, {"config": self.config.get_args_dict()})
@@ -78,7 +79,6 @@ class Trainer:
                 "epoch": epoch + 1,
                 "train/loss": avg_train_loss,
                 "eval/loss": avg_eval_loss,
-                
                 "eval/f1": results_dict['micro_avg']['f1'],
                 "eval/results": results_dict
             }
@@ -127,8 +127,8 @@ class Trainer:
         
         return avg_eval_loss,eval_accuracy,results_dict
     def test(self, testdataLoader):
-        checkpoint = torch.load(self.early_stop.best_model_path)
-        self.model.load_state_dict(checkpoint["model"])  
+        checkpoint = torch.load(self.early_stop.best_model_path, map_location=self.device, weights_only=False)
+        self.model.load_state_dict(checkpoint["model"])
         self.model = self.model.to(self.device)
         self.model.eval()
         
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     args=Arguments(args.arg)
     traindataLoader, devdataLoader, testdataLoader,label2id,id2label = load_data(args)
     args.set_mapping(label2id,id2label)
-    model=Bert4NER(args)
+    model=Qwen4NER(args)
     optimizer = model.get_optimizer()
     trainer=Trainer(args)
     trainer.train(traindataLoader, devdataLoader, testdataLoader, model, optimizer)

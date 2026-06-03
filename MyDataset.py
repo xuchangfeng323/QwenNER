@@ -11,7 +11,7 @@ class bc2gmDataset(Dataset):
         self.get_sentences(data_path)
         self.label2id=None
         if tokenizer is None:
-            tokenizer = BertTokenizer.from_pretrained('../bert-base-chinese')
+            tokenizer = AutoTokenizer.from_pretrained('../'+config.model_dir)
         self.tokenizer = tokenizer
         self.max_length = max_length
     def __len__(self):
