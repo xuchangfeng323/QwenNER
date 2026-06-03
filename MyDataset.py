@@ -29,10 +29,10 @@ class bc2gmDataset(Dataset):
         self.texts = [item['sentence'] for item in data]
         self.label_list = [item['entities'] for item in data]
     def get_entities(self):
-        # 展平所有句子的 entities 列表
+        
         all_entities = []
         for entities in self.label_list:
-            all_entities.extend(entities)
+            all_entities.extend(entities['type'])
         return all_entities
 
     def set_label2id(self, label2id):
