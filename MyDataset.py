@@ -1,9 +1,9 @@
 from torch.utils.data import Dataset
-from transformers import BertTokenizer
+from transformers import AutoTokenizer
 import torch
 from torch.utils.data import DataLoader
 
-class WeiboNerDataset(Dataset):
+class bc2gmDataset(Dataset):
     def __init__(self, data_path, tokenizer=None, max_length=128,align_type='ignore'):
         self.align_type=align_type
         self.texts = []
@@ -24,19 +24,17 @@ class WeiboNerDataset(Dataset):
             'labels': label
         }
     def get_sentences(self,dir_path):
-        with open(dir_path, encoding='utf-8') as f:
-            blocks = f.read().strip().split('\n\n')
-        
-        sentences_list, tags_list = [], []
-        for block in blocks:
-            pairs = [line.split() for line in block.split('\n') if len(line.split()) == 2]
-            if pairs:
-                words, tags = zip(*pairs)
-                sentences_list.append(list(words))
-                tags_list.append(list(tags))
-            
-        self.texts = sentences_list
-        self.label_list = tags_list
+        with open(dir_path, 'r', encoding='utf-8') as f:
+            data= json.load(f)
+        self.texts = [item['sentence'] for item in data]
+        self.label_list = [item['entities'] for item in data]
+    def get_entities(self):
+        # 展平所有句子的 entities 列表
+        all_entities = []
+        for entities in self.label_list:
+            all_entities.extend(entities)
+        return all_entities
+
     def set_label2id(self, label2id):
         self.label2id=label2id
     def collate_fn(self, batch):

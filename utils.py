@@ -1,8 +1,8 @@
 import os
 import random
 import pandas as pd
-from transformers import BertTokenizerFast
-from MyDataset import WeiboNerDataset
+from transformers import AutoTokenizer
+from MyDataset import bc2gmDataset
 import torch
 import json
 import numpy as np
