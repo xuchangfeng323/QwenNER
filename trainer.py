@@ -35,14 +35,26 @@ class Trainer:
         self.model=model
         model.to(self.device)
         swanlab.init(
-            project="weibo_ner",  
+            project="qwen4ner",  
             name="qwen2.5-ner",
             config={
                 "num_epochs": self.config.num_epochs,
                 "lr": self.config.lr,
                 "batch_size": self.config.batch_size,
                 "model": self.config.model_name,
-
+                "weight_decay": self.config.weight_decay,
+                "device": self.config.device,
+                "embedding_dim": self.config.embedding_dim,
+                "data_path": self.config.data_path,
+                "max_length": self.config.max_length,
+                "patience": self.config.patience,
+                "monitor": self.config.monitor,
+                "delta": self.config.delta,
+                "dropout_rate": self.config.dropout_rate,
+                "lora_r": self.config.lora_r,
+                "lora_alpha": self.config.lora_alpha,
+                "lora_dropout": self.config.lora_dropout,
+                "lora_target_modules": self.config.lora_target_modules,
             }
         )
         write_log(self.log_dir, {"config": self.config.get_args_dict()})
@@ -125,7 +137,7 @@ class Trainer:
         })
 
         
-        return avg_eval_loss,eval_accuracy,results_dict
+        return avg_eval_loss,results_dict
     def test(self, testdataLoader):
         checkpoint = torch.load(self.early_stop.best_model_path, map_location=self.device, weights_only=False)
         self.model.load_state_dict(checkpoint["model"])

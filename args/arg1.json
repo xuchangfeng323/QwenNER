@@ -7,7 +7,6 @@
     "model_name": "Qwen2.5-0.5B",
     "model_dir": "./model/Qwen2.5-0.5B",
     "dropout_rate": 0.2,
-    "align_type": "ignore",
     "embedding_dim": 896,
     "data_path": "./data/",
     "max_length": 128,
