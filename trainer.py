@@ -14,7 +14,6 @@ class Trainer:
         self.device=config.device
         self.num_epochs=config.num_epochs
         self.config=config
-        self.loss_fn = nn.CrossEntropyLoss()
         print(config.get_args_dict())
         self.metrics = Metrics(config.label2id,config.id2label,config.eps)
         self.best_accuracy = 0.0
@@ -26,13 +25,14 @@ class Trainer:
     
     def train(self,traindataLoader, devdataLoader, testdataLoader, model,optimizer):
         self.optimizer=optimizer
+        
+        self.model=model
         self.scheduler=get_scheduler(
             "linear",
             optimizer,
             num_warmup_steps=self.config.warmup_steps,
             num_training_steps=self.num_epochs * len(traindataLoader)
         )
-        self.model=model
         model.to(self.device)
         swanlab.init(
             project="qwen4ner",  
@@ -67,10 +67,9 @@ class Trainer:
                 self.optimizer.zero_grad()
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
-                
                 labels = labels.to(self.device)
-                logits = self.model(input_ids, attention_mask)
-                loss=self.loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1))
+                outputs = self.model(input_ids, attention_mask, labels=labels)
+                loss=outputs.loss
                 loss.backward()
                 self.optimizer.step()
                 if self.scheduler is not None:
@@ -115,12 +114,11 @@ class Trainer:
                 attention_mask = attention_mask.to(self.device)
                 
                 labels = labels.to(self.device)
-                logits = self.model(input_ids, attention_mask)
-                loss_fn = self.loss_fn
-                loss = loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1))
-                total_eval_loss += loss.item()
-                predictions = torch.argmax(logits, dim=-1)
-                self.metrics.add(predictions, labels)
+                outputs = self.model(input_ids, attention_mask, labels=labels)
+                loss=outputs.loss
+                
+                
+                self.metrics.add(outputs, labels)
         results = self.metrics.get_results()
         print(results)
         results_dict = self.metrics.get_result_dict()
@@ -181,6 +179,5 @@ if __name__ == "__main__":
     model=Qwen4NER(args)
     optimizer = model.get_optimizer()
     trainer=Trainer(args)
-    trainer.train(traindataLoader, devdataLoader, testdataLoader, model, optimizer)
-   
+    trainer.train(traindataLoader, devdataLoader, testdataLoader, model, optimizer)  
         

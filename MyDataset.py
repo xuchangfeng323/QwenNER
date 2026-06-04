@@ -17,10 +17,16 @@ class bc2gmDataset(Dataset):
         return len(self.texts)
     def __getitem__(self, idx):
         text = self.texts[idx]
-        label = self.label_list[idx]
+        entities = self.label_list[idx]
+        entity_sentence = ""
+        for entity in entities:
+            entity_json=dict(entity)
+            entity_sentence+=f"{'name': '{entity_json['name']}', 'type': '{entity_json['type']}'}\n"
+        if entity_sentence == "":
+            entity_sentence = "\"entities\": []"
         return {
             'text': text,
-            'labels': label
+            'output':entity_sentence
         }
     def get_sentences(self,dir_path):
         with open(dir_path, 'r', encoding='utf-8') as f:
@@ -36,26 +42,37 @@ class bc2gmDataset(Dataset):
 
     def set_label2id(self, label2id):
         self.label2id=label2id
-    def collate_fn(self, batch):
-        
-        texts = [item['text'] for item in batch]
-        labels_list = [item['labels'] for item in batch]
-
-        
-        encodings = self.tokenizer(
-            texts,
-            truncation=True,
-            is_split_into_words=True,   
-            padding='longest',
-            max_length=self.max_length,
-            return_tensors="pt"
+    def process_func(self, item):
+        input_ids, attention_mask, labels = [], [], []
+        system_prompt = (
+            "你是一个生物医学命名实体识别专家。"
+            "你的任务是从给定的英文生物医学文本中识别基因和蛋白质实体（GENE）。\n\n"
+            "实体类型定义：\n"
+            "- GENE: 基因或蛋白质名称，包括基因产物、酶、受体、抗体、细胞因子等\n\n"
+            "请严格按照以下JSON格式输出识别结果：\n"
+            '{"entities": [{"name": "实体名称", "type": "GENE"}]}\n\n'
+            "要求：\n"
+            "1. 必须输出合法的JSON字符串，不要包含任何额外解释\n"
+            "2. 如果句子中没有找到任何实体，输出 {\"entities\": []}\n"
+            "3. 实体名称必须与原文中的表述完全一致，不要修改或翻译\n"
+            "4. 每个实体单独列出，不要合并不同的实体"
         )
-
-        targets = []
-        targets = torch.tensor(targets, dtype=torch.long)
-        
-        return encodings['input_ids'], encodings['attention_mask'], targets
-            
+        instruction = self.tokenizer(
+        f"<|im_start|>system\n{system_prompt}<|im_end|>\n<|im_start|>user\n{item['text']}<|im_end|>\n<|im_start|>assistant\n",
+        add_special_tokens=False,
+    )
+        response = self.tokenizer(f"{item['output']}", add_special_tokens=False)
+        input_ids = instruction["input_ids"] + response["input_ids"] + [self.tokenizer.pad_token_id]
+        attention_mask = (instruction["attention_mask"] + response["attention_mask"] + [1])
+        labels = [-100] * len(instruction["input_ids"]) + response["input_ids"] + [self.tokenizer.pad_token_id]
+        if len(input_ids)>self.max_length:
+            input_ids = input_ids[:self.max_length]
+            attention_mask = attention_mask[:self.max_length]
+            labels = labels[:self.max_length]
+        return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
+    def collate_fn(self, batch):
+        processed_batch = [self.process_func(item) for item in batch]
+        return {{"input_ids": processed_batch["input_ids"], "attention_mask": processed_batch["attention_mask"], "labels": processed_batch["labels"] }}
     def get_data_loader(self, batch_size=16, shuffle=True):
         return DataLoader(self, batch_size=batch_size, collate_fn=self.collate_fn, shuffle=shuffle)
 

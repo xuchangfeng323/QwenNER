@@ -1,4 +1,4 @@
-from transformers import AutoModel
+from transformers import AutoModelForCausalLM
 import torch
 from peft import LoraConfig, get_peft_model, TaskType
 from utils import Arguments
@@ -10,8 +10,7 @@ class Qwen4NER(nn.Module):
         super().__init__()
         self.lr=config.lr
         self.weight_decay=config.weight_decay
-        base_model = AutoModel.from_pretrained(config.model_dir, trust_remote_code=True)
-
+        base_model = AutoModelForCausalLM.from_pretrained(config.model_dir, trust_remote_code=True)
         lora_config = LoraConfig(
             task_type=TaskType.FEATURE_EXTRACTION,
             r=config.lora_r,

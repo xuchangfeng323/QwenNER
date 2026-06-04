@@ -1,4 +1,5 @@
 import os
+import argparse
 import random
 import pandas as pd
 from transformers import AutoTokenizer
@@ -45,9 +46,9 @@ def build_label_mappings(labels, save_path=None):
 
 def load_data(config):
     data_dir=config.data_path
-    train_dataset = WeiboNerDataset(os.path.join(data_dir, 'train.json'), config.tokenizer, config.max_length, config.align_type)
-    test_dataset = WeiboNerDataset(os.path.join(data_dir, 'test.json'), config.tokenizer, config.max_length, config.align_type)
-    dev_dataset = WeiboNerDataset(os.path.join(data_dir, 'dev.json'), config.tokenizer, config.max_length, config.align_type)
+    train_dataset = bc2gmDataset(os.path.join(data_dir, 'train.json'), config.tokenizer, config.max_length)
+    test_dataset = bc2gmDataset(os.path.join(data_dir, 'test.json'), config.tokenizer, config.max_length)
+    dev_dataset = bc2gmDataset(os.path.join(data_dir, 'dev.json'), config.tokenizer, config.max_length)
 
     label2id, id2label = build_label_mappings(train_dataset.get_entities()+test_dataset.get_entities()+dev_dataset.get_entities(), save_path=os.path.join(data_dir, 'label2id.json'))
     config.set_mapping(label2id,id2label)
@@ -275,10 +276,11 @@ class Arguments:
         self.class_num=None
         self.label2id=None
         self.id2label=None
+        self.tokenizer=None
         for key, value in self.args_dict.items():
             setattr(self, key, value)
         self._set_seed()
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir, trust_remote_code=True)
+        self._set_tokenizer()
         
     def _set_seed(self):
         seed = self.args_dict.get('seed', 42)
@@ -288,7 +290,8 @@ class Arguments:
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-
+    def _set_tokenizer(self):
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_dir, trust_remote_code=True)
     def _load_json_config(self, config_path):
         if os.path.exists(config_path):
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -305,3 +308,9 @@ class Arguments:
         self.args_dict['id2label']=id2label
         
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--arg', type=str, default='./args/arg1.json')
+    cmd_args = parser.parse_args()
+    args = Arguments(cmd_args.arg)
+    print(args.get_args_dict())
