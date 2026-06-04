@@ -20,16 +20,10 @@ class Qwen4NER(nn.Module):
             target_modules=config.lora_target_modules,
         )
         self.qwen = get_peft_model(base_model, lora_config)
-        self.qwen.print_trainable_parameters()
-
-        self.dropout = nn.Dropout(config.dropout_rate)
-        self.fc = nn.Linear(config.embedding_dim, config.class_num)
-    def forward(self, input_ids, attention_mask):
-        outputs = self.qwen(input_ids=input_ids, attention_mask=attention_mask)
-        last_hidden_state = outputs.last_hidden_state
-        last_hidden_state = self.dropout(last_hidden_state)
-        logits = self.fc(last_hidden_state)
-        return logits
+        
+    def forward(self, input_ids, attention_mask, labels=None):
+        outputs = self.qwen(input_ids=input_ids, attention_mask=attention_mask,labels=labels)
+        return outputs
     def get_optimizer(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
