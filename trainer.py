@@ -106,36 +106,30 @@ class Trainer:
         
     def eval(self,epoch, devdataLoader):
         self.model.eval()
-        total_eval_loss = 0
+            
         progress_bar = tqdm(devdataLoader, desc="Evaluation", position=0, leave=True)
         with torch.no_grad():
             for input_ids, attention_mask, labels in progress_bar:
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
+                generated_ids = self.model.generate(input_ids, attention_mask)
+                generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
+                response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 
-                labels = labels.to(self.device)
-                outputs = self.model(input_ids, attention_mask, labels=labels)
-                loss=outputs.loss
-                
-                
-                self.metrics.add(outputs, labels)
+                self.metrics.add(response, labels)
         results = self.metrics.get_results()
         print(results)
         results_dict = self.metrics.get_result_dict()
         self.metrics.reset()
-        avg_eval_loss = total_eval_loss / len(devdataLoader)
-        print(f"Eval Loss: {avg_eval_loss:.4f}")
+            
         print(f"Eval F1 Score: {results_dict['micro_avg']['f1']:.4f}")
         
         swanlab.log({
-            "eval/loss": avg_eval_loss,
-            
             "eval/f1": results_dict['micro_avg']['f1'],
-            
         })
 
         
-        return avg_eval_loss,results_dict
+        return results_dict
     def test(self, testdataLoader):
         checkpoint = torch.load(self.early_stop.best_model_path, map_location=self.device, weights_only=False)
         self.model.load_state_dict(checkpoint["model"])
@@ -149,10 +143,12 @@ class Trainer:
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
                 labels = labels.to(self.device)
-                logits = self.model(input_ids, attention_mask)
-                predictions = torch.argmax(logits, dim=-1)
+                generated_ids = self.model.generate(input_ids, attention_mask)
+                generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
+                response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 
-                self.metrics.add(predictions, labels)
+                self.metrics.add(response, labels)
+                
         results = self.metrics.get_results()
         results_dict = self.metrics.get_result_dict()
         
