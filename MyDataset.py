@@ -19,11 +19,8 @@ class bc2gmDataset(Dataset):
         text = self.texts[idx]
         entities = self.label_list[idx]
         entity_sentence = ""
-        for entity in entities:
-            entity_json=dict(entity)
-            entity_sentence+=f"{'name': '{entity_json['name']}', 'type': '{entity_json['type']}'}\n"
-        if entity_sentence == "":
-            entity_sentence = "\"entities\": []"
+        entities_list = [{"name": e["name"], "type": e["type"]} for e in entities]
+        entity_sentence = json.dumps({"entities": entities_list}, ensure_ascii=False)
         return {
             'text': text,
             'output':entity_sentence
@@ -36,8 +33,8 @@ class bc2gmDataset(Dataset):
     def get_entities(self):
         
         all_entities = []
-        for entities in self.label_list:
-            all_entities.extend(entities['type'])
+        for entity in entities:
+            all_entities.append(entity['type'])
         return all_entities
 
     def set_label2id(self, label2id):
@@ -72,7 +69,10 @@ class bc2gmDataset(Dataset):
         return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
     def collate_fn(self, batch):
         processed_batch = [self.process_func(item) for item in batch]
-        return {{"input_ids": processed_batch["input_ids"], "attention_mask": processed_batch["attention_mask"], "labels": processed_batch["labels"] }}
+        input_ids = torch.stack([torch.tensor(p["input_ids"]) for p in processed_batch])
+        attention_mask = torch.stack([torch.tensor(p["attention_mask"]) for p in processed_batch])
+        labels = torch.stack([torch.tensor(p["labels"]) for p in processed_batch])
+        return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
     def get_data_loader(self, batch_size=16, shuffle=True):
         return DataLoader(self, batch_size=batch_size, collate_fn=self.collate_fn, shuffle=shuffle)
 
