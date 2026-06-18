@@ -78,6 +78,10 @@ class Metrics:
         self.all_pred_entities = set()
         self.seq_count = 0  
         self.result_df = None
+    def parse_json(self,json_str):
+        data=json.loads(json_str)
+        return data['entities']
+    
         
     def add(self, predictions, labels):    
         predictions = predictions.tolist()
