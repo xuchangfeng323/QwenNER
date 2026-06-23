@@ -64,7 +64,7 @@ class Metrics:
         
         self.eps = eps
         self.entity_types = set()
-        with open(os.path.join(config.data_path, 'label.json'), 'r', encoding='utf-8') as f:
+        with open(os.path.join(config.data_path, 'labels.json'), 'r', encoding='utf-8') as f:
             data= json.load(f)
             self.entity_types = set(data)
         self.entity_types = sorted(self.entity_types)
@@ -85,13 +85,13 @@ class Metrics:
             for true_entity in labels:
                 entity_type = true_entity['type']
                 entity_pos = true_entity['pos']
-                if entity_type not in self.entity_types and entity_pos is not None:
-                    self.all_true_entities.add((entity_type,entity_pos,self.seq_count))
+                if entity_type  in self.entity_types and entity_pos is not None:
+                    self.all_true_entities.add((self.seq_count,entity_type,entity_pos[0],entity_pos[1]))
             occurrences = set()
             for pred_entity in preds:
                 entity_type = pred_entity['type']
                 entity_name = pred_entity['name']
-                if entity_name is None:
+                if not entity_name :
                     continue
                 start = texts.find(entity_name)
                 
@@ -100,7 +100,7 @@ class Metrics:
                 if start !=-1:
                     occurrences.add(start)
                     end = start + len(entity_name)
-                    self.all_pred_entities.add((entity_type,[start,end],self.seq_count))
+                    self.all_pred_entities.add((self.seq_count,entity_type,start,end))
             self.seq_count += 1
             
             
