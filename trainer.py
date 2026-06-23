@@ -15,12 +15,12 @@ class Trainer:
         self.num_epochs=config.num_epochs
         self.config=config
         print(config.get_args_dict())
-        self.metrics = Metrics(config.label2id,config.id2label,config.eps)
+        self.metrics = Metrics(config)
         self.best_accuracy = 0.0
         self.save_dir = get_next(config.save_dir)
         self.early_stop = EarlyStop(config, self.save_dir)
         self.log_dir=os.path.join(self.save_dir,"log.jsonl")
-        self.scheduler=None
+        
         
     
     def train(self,traindataLoader, devdataLoader, testdataLoader, model,optimizer):
@@ -63,7 +63,11 @@ class Trainer:
             total_train_loss = 0
             progress_bar = tqdm(traindataLoader, desc=f"Epoch {epoch + 1}/{self.num_epochs} [Train]", position=0, leave=True)
             for step, batch in enumerate(progress_bar):
-                input_ids, attention_mask, labels, texts, entities = batch
+                input_ids = batch["input_ids"]
+                attention_mask = batch["attention_mask"]
+                labels = batch["labels"]
+                texts = batch["text"]
+                entities = batch["entities"]
                 
                 self.optimizer.zero_grad()
                 input_ids = input_ids.to(self.device)
@@ -86,7 +90,7 @@ class Trainer:
             swanlab.log({
                 "train/loss_epoch": avg_train_loss
             }, step=epoch)
-            avg_eval_loss,eval_accuracy,results_dict = self.eval(epoch, devdataLoader)
+            results_dict = self.eval(epoch, devdataLoader)
             log_dict = {
                 "epoch": epoch + 1,
                 "train/loss": avg_train_loss,
@@ -118,7 +122,7 @@ class Trainer:
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 
-                self.metrics.add(response, entities,texts)
+                self.metrics.add_entities(response, entities,texts)
         results = self.metrics.get_results()
         print(results)
         results_dict = self.metrics.get_result_dict()
@@ -141,7 +145,13 @@ class Trainer:
 
         progress_bar = tqdm(testdataLoader, desc="Testing", position=0, leave=True)
         with torch.no_grad():
-            for  input_ids, attention_mask, labels in progress_bar:
+            for  batch in progress_bar:
+                input_ids = batch["input_ids"]
+                attention_mask = batch["attention_mask"]
+                labels = batch["labels"]
+                texts = batch["text"]
+                entities = batch["entities"]
+                
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
                 labels = labels.to(self.device)
@@ -149,7 +159,7 @@ class Trainer:
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 
-                self.metrics.add(response, labels)
+                self.metrics.add_entities(response, entities,texts)
                 
         results = self.metrics.get_results()
         results_dict = self.metrics.get_result_dict()
@@ -172,8 +182,7 @@ if __name__ == "__main__":
     parser.add_argument('--arg', type=str, default='./args/arg1.json')
     args = parser.parse_args()
     args=Arguments(args.arg)
-    traindataLoader, devdataLoader, testdataLoader,label2id,id2label = load_data(args)
-    args.set_mapping(label2id,id2label)
+    traindataLoader, devdataLoader, testdataLoader= load_data(args)
     model=Qwen4NER(args)
     optimizer = model.get_optimizer()
     trainer=Trainer(args)

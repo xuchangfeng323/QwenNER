@@ -49,7 +49,7 @@ def load_data(config):
     train_dataset = bc2gmDataset(os.path.join(data_dir, 'train.json'), config.tokenizer, config.max_length)
     test_dataset = bc2gmDataset(os.path.join(data_dir, 'test.json'), config.tokenizer, config.max_length)
     dev_dataset = bc2gmDataset(os.path.join(data_dir, 'dev.json'), config.tokenizer, config.max_length)
-    config.set_mapping(label2id,id2label)
+    
     train_dataLoader = train_dataset.get_data_loader(batch_size=config.batch_size)
     dev_dataLoader = dev_dataset.get_data_loader(batch_size=config.batch_size,shuffle=False)
     test_dataLoader = test_dataset.get_data_loader(batch_size=config.batch_size,shuffle=False)

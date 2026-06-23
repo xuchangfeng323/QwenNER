@@ -58,7 +58,9 @@ class bc2gmDataset(Dataset):
         instruction = self.tokenizer(
         f"<|im_start|>system\n{system_prompt}<|im_end|>\n<|im_start|>user\n{item['text']}<|im_end|>\n<|im_start|>assistant\n",
         add_special_tokens=False,
-    )
+    )   
+        text = item['text']
+        entities = item['entities']
         response = self.tokenizer(f"{item['output']}", add_special_tokens=False)
         input_ids = instruction["input_ids"] + response["input_ids"] + [self.tokenizer.pad_token_id]
         attention_mask = (instruction["attention_mask"] + response["attention_mask"] + [1])
@@ -75,7 +77,7 @@ class bc2gmDataset(Dataset):
         input_ids = torch.stack([torch.tensor(p["input_ids"]) for p in processed_batch])
         attention_mask = torch.stack([torch.tensor(p["attention_mask"]) for p in processed_batch])
         labels = torch.stack([torch.tensor(p["labels"]) for p in processed_batch])
-        return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels,"text":torch.stack([torch.tensor(p["text"]) for p in processed_batch]),"entities":torch.stack([torch.tensor(p["entities"]) for p in processed_batch])}
+        return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels,"text":[p["text"] for p in processed_batch],"entities":[p["entities"] for p in processed_batch]}
     def get_data_loader(self, batch_size=16, shuffle=True):
         return DataLoader(self, batch_size=batch_size, collate_fn=self.collate_fn, shuffle=shuffle)
 
