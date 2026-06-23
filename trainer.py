@@ -62,7 +62,8 @@ class Trainer:
             self.model.train()
             total_train_loss = 0
             progress_bar = tqdm(traindataLoader, desc=f"Epoch {epoch + 1}/{self.num_epochs} [Train]", position=0, leave=True)
-            for step, (input_ids, attention_mask, labels) in enumerate(progress_bar):
+            for step, batch in enumerate(progress_bar):
+                input_ids, attention_mask, labels, texts, entities = batch
                 
                 self.optimizer.zero_grad()
                 input_ids = input_ids.to(self.device)
@@ -109,14 +110,15 @@ class Trainer:
             
         progress_bar = tqdm(devdataLoader, desc="Evaluation", position=0, leave=True)
         with torch.no_grad():
-            for input_ids, attention_mask, labels in progress_bar:
+            for batch in progress_bar:
+                input_ids, attention_mask, labels, texts, entities = batch
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
                 generated_ids = self.model.generate(input_ids, attention_mask)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 
-                self.metrics.add(response, labels)
+                self.metrics.add(response, entities,texts)
         results = self.metrics.get_results()
         print(results)
         results_dict = self.metrics.get_result_dict()
