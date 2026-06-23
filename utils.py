@@ -49,30 +49,24 @@ def load_data(config):
     train_dataset = bc2gmDataset(os.path.join(data_dir, 'train.json'), config.tokenizer, config.max_length)
     test_dataset = bc2gmDataset(os.path.join(data_dir, 'test.json'), config.tokenizer, config.max_length)
     dev_dataset = bc2gmDataset(os.path.join(data_dir, 'dev.json'), config.tokenizer, config.max_length)
-
-    label2id, id2label = build_label_mappings(train_dataset.get_entities()+test_dataset.get_entities()+dev_dataset.get_entities(), save_path=os.path.join(data_dir, 'label2id.json'))
     config.set_mapping(label2id,id2label)
-    train_dataset.set_label2id(label2id)
-    test_dataset.set_label2id(label2id)
-    dev_dataset.set_label2id(label2id)
     train_dataLoader = train_dataset.get_data_loader(batch_size=config.batch_size)
     dev_dataLoader = dev_dataset.get_data_loader(batch_size=config.batch_size,shuffle=False)
     test_dataLoader = test_dataset.get_data_loader(batch_size=config.batch_size,shuffle=False)
-    return train_dataLoader, dev_dataLoader, test_dataLoader,label2id,id2label
+    return train_dataLoader, dev_dataLoader, test_dataLoader
 
 def write_log(log_jsonl_path, log_dict):
 
     with open(log_jsonl_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(log_dict, ensure_ascii=False) + "\n")
 class Metrics:
-    def __init__(self,label2id,id2label,eps=1e-8):
-        self.id2label = id2label
-        self.label2id = label2id
+    def __init__(self,config,eps=1e-8):
+        
         self.eps = eps
         self.entity_types = set()
-        for idx, label in id2label.items():
-            if label.startswith('B-'):
-                self.entity_types.add(label[2:])  
+        with open(os.path.join(config.data_path, 'label.json'), 'r', encoding='utf-8') as f:
+            data= json.load(f)
+            self.entity_types = set(data)
         self.entity_types = sorted(self.entity_types)
         self.all_true_entities = set()
         self.all_pred_entities = set()
@@ -85,34 +79,33 @@ class Metrics:
         except:
             pass
             return []
-        
-    def add(self, predictions, labels):    
-        predictions = predictions.tolist()
-        labels = labels.tolist()
-        
-        for pred_seq, label_seq in zip(predictions, labels):
-            
-            pred_str = [self.id2label.get(p) for p, l in zip(pred_seq, label_seq) if l != -100]
-            true_str = [self.id2label.get(l) for l in label_seq if l != -100]
-            self.all_true_entities.update(self._extract_entities(true_str, self.seq_count))
-            self.all_pred_entities.update(self._extract_entities(pred_str, self.seq_count))
+    
+    def add_entities(self, batch_predictions, batch_labels,batch_texts):
+        for preds, labels, texts in zip(batch_predictions, batch_labels, batch_texts):
+            for true_entity in labels:
+                entity_type = true_entity['type']
+                entity_pos = true_entity['pos']
+                if entity_type not in self.entity_types and entity_pos is not None:
+                    self.all_true_entities.add((entity_type,entity_pos,self.seq_count))
+            occurrences = set()
+            for pred_entity in preds:
+                entity_type = pred_entity['type']
+                entity_name = pred_entity['name']
+                if entity_name is None:
+                    continue
+                start = texts.find(entity_name)
+                
+                while start !=-1 and start in occurrences:
+                    start = texts.find(entity_name,start+1)
+                if start !=-1:
+                    occurrences.add(start)
+                    end = start + len(entity_name)
+                    self.all_pred_entities.add((entity_type,[start,end],self.seq_count))
             self.seq_count += 1
+            
+            
+            
 
-    def _extract_entities(self, tags,seq_id):
-        entities =[]
-        i=0
-        while i<len(tags):
-            if tags[i].startswith('B-'):
-                entity_type = tags[i][2:]
-                start=i
-                i+=1
-                while i<len(tags) and tags[i]=='I-'+entity_type:
-                    i+=1
-                end=i
-                entities.append((seq_id,entity_type,start,end))
-            else:
-                i+=1
-        return entities
 
 
     def reset(self):

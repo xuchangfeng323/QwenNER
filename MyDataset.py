@@ -30,10 +30,10 @@ class bc2gmDataset(Dataset):
             data= json.load(f)
         self.texts = [item['sentence'] for item in data]
         self.label_list = [item['entities'] for item in data]
-    def get_entities(self):
+    def get_entities(self,entities_list):
         
         all_entities = []
-        for entity in entities:
+        for entity in entities_list:
             all_entities.append(entity['type'])
         return all_entities
 
@@ -47,7 +47,7 @@ class bc2gmDataset(Dataset):
             "实体类型定义：\n"
             "- GENE: 基因或蛋白质名称，包括基因产物、酶、受体、抗体、细胞因子等\n\n"
             "请严格按照以下JSON格式输出识别结果：\n"
-            '{"entities": [{"name": "实体名称", "type": "GENE"}]}\n\n'
+            '{"entities": [{"name": "实体名称", "type": "实体类别"}]}\n\n'
             "要求：\n"
             "1. 必须输出合法的JSON字符串，不要包含任何额外解释\n"
             "2. 如果句子中没有找到任何实体，输出 {\"entities\": []}\n"
