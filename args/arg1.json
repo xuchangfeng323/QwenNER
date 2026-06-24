@@ -5,7 +5,7 @@
     "weight_decay": 0.01,
     "device": "cuda:0",
     "model_name": "Qwen2.5-0.5B",
-    "model_dir": "./model/Qwen2.5-0.5B",
+    "model_dir": "model/Qwen2.5-0.5B",
     "dropout_rate": 0.2,
     "embedding_dim": 896,
     "data_path": "./data/",

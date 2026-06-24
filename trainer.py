@@ -91,17 +91,16 @@ class Trainer:
                 "train/loss_epoch": avg_train_loss
             }, step=epoch)
             results_dict = self.eval(epoch, devdataLoader)
+            f1 = results_dict['micro_avg']['f1']
             log_dict = {
                 "epoch": epoch + 1,
                 "train/loss": avg_train_loss,
-                "eval/loss": avg_eval_loss,
                 "eval/f1": results_dict['micro_avg']['f1'],
                 "eval/results": results_dict
             }
-            f1=results_dict['micro_avg']['f1']
             write_log(self.log_dir, log_dict)
-            
-            if self.early_stop(epoch,avg_eval_loss,eval_accuracy,f1, model,optimizer,self.scheduler):
+
+            if self.early_stop(epoch, avg_train_loss, None, f1, model, optimizer, self.scheduler):
                 break
 
         self.test(testdataLoader)
@@ -115,14 +114,18 @@ class Trainer:
         progress_bar = tqdm(devdataLoader, desc="Evaluation", position=0, leave=True)
         with torch.no_grad():
             for batch in progress_bar:
-                input_ids, attention_mask, labels, texts, entities = batch
+                input_ids=batch["input_ids"]
+                attention_mask=batch["attention_mask"]
+                labels=batch["labels"]
+                texts=batch["text"]
+                entities=batch["entities"]
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
                 generated_ids = self.model.generate(input_ids, attention_mask)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
-                
-                self.metrics.add_entities(response, entities,texts)
+                pred_entities_batch = [self.metrics.parse_json(r) for r in response]
+                self.metrics.add_entities(pred_entities_batch, entities, texts)
         results = self.metrics.get_results()
         print(results)
         results_dict = self.metrics.get_result_dict()
@@ -158,8 +161,8 @@ class Trainer:
                 generated_ids = self.model.generate(input_ids, attention_mask)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
-                
-                self.metrics.add_entities(response, entities,texts)
+                pred_entities_batch = [self.metrics.parse_json(r) for r in response]
+                self.metrics.add_entities(pred_entities_batch, entities, texts)
                 
         results = self.metrics.get_results()
         results_dict = self.metrics.get_result_dict()
