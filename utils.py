@@ -292,6 +292,7 @@ class Arguments:
         torch.backends.cudnn.benchmark = False
     def _set_tokenizer(self):
         self.tokenizer = AutoTokenizer.from_pretrained(self.args_dict['model_dir'], trust_remote_code=True,use_fast=False,padding_side='left',)
+        self.tokenizer.pad_token = self.tokenizer.eos_token
     def _load_json_config(self, config_path):
         if os.path.exists(config_path):
             with open(config_path, 'r', encoding='utf-8') as f:

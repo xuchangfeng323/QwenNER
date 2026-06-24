@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 class bc2gmDataset(Dataset):
     def __init__(self, data_path, tokenizer=None, max_length=1024):
-        
+
         self.texts = []
         self.label_list = []
         self.get_sentences(data_path)
@@ -32,7 +32,7 @@ class bc2gmDataset(Dataset):
         self.texts = [item['sentence'] for item in data]
         self.label_list = [item['entities'] for item in data]
     def get_entities(self,entities_list):
-        
+
         all_entities = []
         for entity in entities_list:
             all_entities.append(entity['type'])
@@ -70,16 +70,22 @@ class bc2gmDataset(Dataset):
 
         enc = self.tokenizer(
             full_texts,
-            padding=True,
+            padding_side="left",
+            padding="longest",
             truncation=True,
             max_length=self.max_length,
             return_tensors="pt",
             add_special_tokens=False,
         )
 
-        labels = enc["input_ids"].clone()
-        for i, il in enumerate(inst_lens):
-            labels[i, :il] = -100
+        batch_len = enc["input_ids"].shape[1]
+        labels = torch.full_like(enc["input_ids"], -100)
+        for i, item in enumerate(batch):
+            output_ids = self.tokenizer(item["output"], add_special_tokens=False)["input_ids"]
+            avail_len = batch_len - inst_lens[i]
+            output_len = min(len(output_ids), avail_len)
+            if output_len > 0:
+                labels[i, -output_len:] = torch.tensor(output_ids[:output_len])
 
         return {
             "input_ids": enc["input_ids"],
@@ -91,5 +97,4 @@ class bc2gmDataset(Dataset):
     def get_data_loader(self, batch_size=16, shuffle=True):
         return DataLoader(self, batch_size=batch_size, collate_fn=self.collate_fn, shuffle=shuffle)
 
-    
 
