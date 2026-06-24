@@ -40,8 +40,7 @@ class bc2gmDataset(Dataset):
 
     def set_label2id(self, label2id):
         self.label2id=label2id
-    def process_func(self, item):
-        input_ids, attention_mask, labels = [], [], []
+    def _make_inst_text(self, item):
         system_prompt = (
             "你是一个生物医学命名实体识别专家。"
             "你的任务是从给定的英文生物医学文本中识别基因和蛋白质实体（GENE）。\n\n"
@@ -55,33 +54,40 @@ class bc2gmDataset(Dataset):
             "3. 实体名称必须与原文中的表述完全一致，不要修改或翻译\n"
             "4. 每个实体单独列出，不要合并不同的实体"
         )
-        instruction = self.tokenizer(
-        f"<|im_start|>system\n{system_prompt}<|im_end|>\n<|im_start|>user\n{item['text']}<|im_end|>\n<|im_start|>assistant\n",
-        add_special_tokens=False,
-    )   
-        text = item['text']
-        entities = item['entities']
-        response = self.tokenizer(f"{item['output']}", add_special_tokens=False)
-        input_ids = instruction["input_ids"] + response["input_ids"] + [self.tokenizer.pad_token_id]
-        attention_mask = (instruction["attention_mask"] + response["attention_mask"] + [1])
-        labels = [-100] * len(instruction["input_ids"]) + response["input_ids"] + [self.tokenizer.pad_token_id]
-        if len(input_ids)>self.max_length:
-            input_ids = input_ids[:self.max_length]
-            attention_mask = attention_mask[:self.max_length]
-            labels = labels[:self.max_length]
-            text = item['text'][:self.max_length]
-            entities = item['entities']
-        return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels,"text":text,"entities":entities}
+        return (
+            f"<|im_start|>system\n{system_prompt}<|im_end|>\n"
+            f"<|im_start|>user\n{item['text']}<|im_end|>\n"
+            f"<|im_start|>assistant\n"
+        )
+
     def collate_fn(self, batch):
-        processed_batch = [self.process_func(item) for item in batch]
-        padded = self.tokenizer.pad(
-          [{"input_ids": p["input_ids"], "attention_mask": p["attention_mask"]} for p in processed_batch],
-          return_tensors="pt",padding=True)
-        max_len = padded["input_ids"].shape[1]
-        labels = torch.full((len(processed_batch), max_len), -100, dtype=torch.long)
-        for i, p in enumerate(processed_batch):
-            labels[i, :len(p["labels"])] = torch.tensor(p["labels"])
-        return {"input_ids": padded["input_ids"], "attention_mask": padded["attention_mask"], "labels": labels,"text":[p["text"] for p in processed_batch],"entities":[p["entities"] for p in processed_batch]}
+        full_texts = []
+        inst_lens = []
+        for item in batch:
+            inst_text = self._make_inst_text(item)
+            full_texts.append(inst_text + item["output"])
+            inst_lens.append(len(self.tokenizer(inst_text, add_special_tokens=False)["input_ids"]))
+
+        enc = self.tokenizer(
+            full_texts,
+            padding=True,
+            truncation=True,
+            max_length=self.max_length,
+            return_tensors="pt",
+            add_special_tokens=False,
+        )
+
+        labels = enc["input_ids"].clone()
+        for i, il in enumerate(inst_lens):
+            labels[i, :il] = -100
+
+        return {
+            "input_ids": enc["input_ids"],
+            "attention_mask": enc["attention_mask"],
+            "labels": labels,
+            "text": [item["text"] for item in batch],
+            "entities": [item["entities"] for item in batch],
+        }
     def get_data_loader(self, batch_size=16, shuffle=True):
         return DataLoader(self, batch_size=batch_size, collate_fn=self.collate_fn, shuffle=shuffle)
 
