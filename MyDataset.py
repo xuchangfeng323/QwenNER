@@ -12,6 +12,8 @@ class bc2gmDataset(Dataset):
         self.get_sentences(data_path)
         self.label2id=None
         self.tokenizer = tokenizer
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
         self.max_length = max_length
     def __len__(self):
         return len(self.texts)
