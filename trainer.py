@@ -75,11 +75,13 @@ class Trainer:
                 labels = labels.to(self.device)
                 outputs = self.model(input_ids, attention_mask, labels=labels)
                 loss=outputs.loss
+                del outputs
                 loss.backward()
                 self.optimizer.step()
                 if self.scheduler is not None:
                     self.scheduler.step()
                 total_train_loss += loss.item()
+                del loss
                 progress_bar.set_postfix({"Loss": loss.item()})
                 if step % 50 == 0:
                     swanlab.log({
