@@ -12,6 +12,7 @@ class Qwen4NER(nn.Module):
         self.max_new_tokens=config.max_new_tokens
         self.weight_decay=config.weight_decay
         base_model = AutoModelForCausalLM.from_pretrained(config.model_dir, trust_remote_code=True)
+        base_model.config.pad_token_id = config.tokenizer.pad_token_id
         lora_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM,
             r=config.lora_r,
