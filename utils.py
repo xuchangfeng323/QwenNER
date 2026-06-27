@@ -46,9 +46,9 @@ def build_label_mappings(labels, save_path=None):
 
 def load_data(config):
     data_dir=config.data_path
-    train_dataset = bc2gmDataset(os.path.join(data_dir, 'train.json'), config.tokenizer, config.max_length)
-    test_dataset = bc2gmDataset(os.path.join(data_dir, 'test.json'), config.tokenizer, config.max_length)
-    dev_dataset = bc2gmDataset(os.path.join(data_dir, 'dev.json'), config.tokenizer, config.max_length)
+    train_dataset = bc2gmDataset(config,os.path.join(data_dir, 'train.json'),is_train=True)
+    test_dataset = bc2gmDataset(config,os.path.join(data_dir, 'test.json'),is_train=False)
+    dev_dataset = bc2gmDataset(config,os.path.join(data_dir, 'dev.json'),is_train=False)
     
     train_dataLoader = train_dataset.get_data_loader(batch_size=config.batch_size)
     dev_dataLoader = dev_dataset.get_data_loader(batch_size=config.batch_size,shuffle=False)
@@ -255,8 +255,6 @@ class EarlyStop():
         checkpoint_path = os.path.join(self.save_dir, checkpoint_name)
         checkpoint = {
             'epoch': epoch,
-            'label2id': self.config.label2id,
-            'id2label': self.config.id2label,
             'model': model.state_dict(),
             'optimizer': optimizer.state_dict(),
             'scheduler': scheduler.state_dict(),

@@ -5,11 +5,11 @@ import json
 from torch.utils.data import DataLoader
 from utils import Arguments
 class bc2gmDataset(Dataset):
-    def __init__(self,args:Arguments):
+    def __init__(self,args:Arguments,data_path:str, is_train=True):
 
         self.texts = []
         self.label_list = []
-        self.get_sentences(args.data_path)
+        self.get_sentences(data_path)
         self.label2id=None
         self.tokenizer = args.tokenizer
         if self.tokenizer.pad_token is None:
@@ -52,39 +52,71 @@ class bc2gmDataset(Dataset):
         )
 
     def collate_fn(self, batch):
-        full_texts = []
-        inst_lens = []
+        max_len = 0
+        input_ids_list = []
+        attention_mask_list = []
+        label_list = []
+        gen_ids_list = []
+        gen_attention_mask_list = []
         for item in batch:
-            inst_text = self._make_inst_text(item)
-            full_texts.append(inst_text + item["output"])
-            inst_lens.append(len(self.tokenizer(inst_text, add_special_tokens=False)["input_ids"]))
+            instruct_text = self._make_inst_text(item)
+            output_text = item["output"]
+            instrct_enc = self.tokenizer(instruct_text, add_special_tokens=False)
 
-        enc = self.tokenizer(
-            full_texts,
-            padding_side="left",
-            padding="longest",
-            truncation=True,
-            max_length=self.max_length,
-            return_tensors="pt",
-            add_special_tokens=False,
-        )
+            output_enc = self.tokenizer(output_text, add_special_tokens=False)
+            input_ids = instrct_enc["input_ids"]+output_enc["input_ids"]
+            attention_mask = instrct_enc["attention_mask"]+output_enc["attention_mask"]
+            label=torch.full_like(input_ids, -100)
+            label[instrct_enc["input_ids"]:] = torch.tensor(output_enc["input_ids"])
+            label_list.append(label)
+            input_ids_list.append(torch.tensor(input_ids))
+            max_len = max(max_len, len(input_ids))
+            attention_mask_list.append(torch.tensor(attention_mask))
+        
+        if max_len > self.max_length:
+            max_len = self.max_length
+        if self.is_train:
+            for input_ids, attention_mask, label in zip(input_ids_list, attention_mask_list, label_list):
+                input_ids = input_ids[:max_len]
+                attention_mask = attention_mask[:max_len]
+                label = label[:max_len]
+                paddinglen = max_len - len(input_ids)
+                input_ids.extend([self.tokenizer.pad_token_id]*paddinglen)
+                attention_mask.extend([0]*paddinglen)
+                label.extend([-100]*paddinglen)
+            return{
+                "input_ids": torch.stack(final_input_ids_list),
+                "attention_mask": torch.stack(final_attention_mask_list),
+                "labels": torch.stack(final_labels_list),
+                "text": [item["text"] for item in batch],
+                "entities": [item["entities"] for item in batch],
+            }
+        else:
+            gen_labels_list = []
+            gen_ids_list = []
+            gen_attention_mask_list = []
+            for input_ids, attention_mask, label in zip(input_ids_list, attention_mask_list, label_list):
+                input_ids = input_ids[:max_len]
+                attention_mask = attention_mask[:max_len]
+                label = label[:max_len]
+                paddinglen = max_len - len(input_ids)
+                input_ids=paddinglen*[self.tokenizer.pad_token_id]+input_ids
+                attention_mask=paddinglen*[0]*paddinglen
+                label=paddinglen*[-100]+label
+                gen_ids_list.append(input_ids)
+                gen_attention_mask_list.append(attention_mask)
+                gen_labels_list.append(label)
+            return{
+                "input_ids": torch.stack(gen_ids_list),
+                "attention_mask": torch.stack(gen_attention_mask_list),
+                "labels": torch.stack(gen_labels_list),
+                "text": [item["text"] for item in batch],
+                "entities": [item["entities"] for item in batch],
+            }
 
-        batch_len = enc["input_ids"].shape[1]
-        labels = torch.full_like(enc["input_ids"], -100)
-        for i, item in enumerate(batch):
-            output_ids = self.tokenizer(item["output"], add_special_tokens=False)["input_ids"]
-            avail_len = batch_len - inst_lens[i]
-            output_len = min(len(output_ids), avail_len)
-            if output_len > 0:
-                labels[i, -output_len:] = torch.tensor(output_ids[:output_len])
 
-        return {
-            "input_ids": enc["input_ids"],
-            "attention_mask": enc["attention_mask"],
-            "labels": labels,
-            "text": [item["text"] for item in batch],
-            "entities": [item["entities"] for item in batch],
-        }
+                
+        
     def get_data_loader(self, batch_size=16, shuffle=True):
         return DataLoader(self, batch_size=batch_size, collate_fn=self.collate_fn, shuffle=shuffle)
 
