@@ -300,18 +300,5 @@ class Arguments:
         return {}
     def get_args_dict(self):
         return self.args_dict
-    def set_mapping(self,label2id,id2label):
-        self.label2id=label2id
-        self.id2label=id2label
-        self.class_num=len(label2id)
-        self.args_dict['class_num']=self.class_num
-        self.args_dict['label2id']=label2id
-        self.args_dict['id2label']=id2label
-        
+    
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--arg', type=str, default='./args/arg1.json')
-    cmd_args = parser.parse_args()
-    args = Arguments(cmd_args.arg)
-    print(args.get_args_dict())

@@ -3,18 +3,19 @@ from transformers import AutoTokenizer
 import torch
 import json
 from torch.utils.data import DataLoader
-
+from utils import Arguments
 class bc2gmDataset(Dataset):
-    def __init__(self, data_path, tokenizer=None, max_length=1024):
+    def __init__(self,args:Arguments):
 
         self.texts = []
         self.label_list = []
-        self.get_sentences(data_path)
+        self.get_sentences(args.data_path)
         self.label2id=None
-        self.tokenizer = tokenizer
+        self.tokenizer = args.tokenizer
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.max_length = max_length
+        self.max_length = args.max_length
+        self.prompt = args.prompt
     def __len__(self):
         return len(self.texts)
     def __getitem__(self, idx):
@@ -43,21 +44,9 @@ class bc2gmDataset(Dataset):
     def set_label2id(self, label2id):
         self.label2id=label2id
     def _make_inst_text(self, item):
-        system_prompt = (
-            "你是一个生物医学命名实体识别专家。"
-            "你的任务是从给定的英文生物医学文本中识别基因和蛋白质实体（GENE）。\n\n"
-            "实体类型定义：\n"
-            "- GENE: 基因或蛋白质名称，包括基因产物、酶、受体、抗体、细胞因子等\n\n"
-            "请严格按照以下JSON格式输出识别结果：\n"
-            '{"entities": [{"name": "实体名称", "type": "实体类别"}]}\n\n'
-            "要求：\n"
-            "1. 必须输出合法的JSON字符串，不要包含任何额外解释\n"
-            "2. 如果句子中没有找到任何实体，输出 {\"entities\": []}\n"
-            "3. 实体名称必须与原文中的表述完全一致，不要修改或翻译\n"
-            "4. 每个实体单独列出，不要合并不同的实体"
-        )
+        
         return (
-            f"<|im_start|>system\n{system_prompt}<|im_end|>\n"
+            f"<|im_start|>system\n{self.prompt}<|im_end|>\n"
             f"<|im_start|>user\n{item['text']}<|im_end|>\n"
             f"<|im_start|>assistant\n"
         )

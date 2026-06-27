@@ -20,5 +20,6 @@
     "lora_r": 8,
     "lora_alpha": 16,
     "lora_dropout": 0.1,
-    "lora_target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"]
+    "lora_target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
+    "prompt": "你是一个生物医学命名实体识别专家。你的任务是从给定的英文生物医学文本中识别基因和蛋白质实体（GENE）。\n\n实体类型定义：\n- GENE: 基因或蛋白质名称，包括基因产物、酶、受体、抗体、细胞因子等\n\n请严格按照以下JSON格式输出识别结果：\n{\"entities\": [{\"name\": \"实体名称\", \"type\": \"实体类别\"}]}\n\n要求：\n1. 必须输出合法的JSON字符串，不要包含任何额外解释\n2. 如果句子中没有找到任何实体，输出 {\"entities\": []}\n3. 实体名称必须与原文中的表述完全一致，不要修改或翻译\n4. 每个实体单独列出，不要合并不同的实体"
 }
