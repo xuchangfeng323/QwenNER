@@ -113,7 +113,7 @@ class Trainer:
         
     def eval(self,epoch, devdataLoader):
         self.model.eval()
-            
+        self.model.config.use_cache=True
         progress_bar = tqdm(devdataLoader, desc="Evaluation", position=0, leave=True)
         with torch.no_grad():
             for batch in progress_bar:
