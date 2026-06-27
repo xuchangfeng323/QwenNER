@@ -81,11 +81,12 @@ class Trainer:
                 if self.scheduler is not None:
                     self.scheduler.step()
                 total_train_loss += loss.item()
+                loss_record=loss.item()
+                progress_bar.set_postfix({"Loss": loss_record})
                 del loss
-                progress_bar.set_postfix({"Loss": loss.item()})
                 if step % 50 == 0:
                     swanlab.log({
-                        "train/loss_step": loss.item(),
+                        "train/loss_step": loss_record,
                         "train/learning_rate": self.optimizer.param_groups[0]['lr']
                     }, step=epoch * len(traindataLoader) + step)
             avg_train_loss = total_train_loss / len(traindataLoader)

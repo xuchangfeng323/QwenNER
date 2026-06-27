@@ -80,10 +80,9 @@ class bc2gmDataset(Dataset):
             paddinglen = max_len - len(input_ids)
 
             if self.is_train:
-               
-                input_ids = input_ids.extend(paddinglen*[self.tokenizer.pad_token_id])
-                attention_mask = attention_mask.extend(paddinglen*[0])
-                label = label.extend(paddinglen*[-100])
+                input_ids.extend(paddinglen*[self.tokenizer.pad_token_id])
+                attention_mask.extend(paddinglen*[0])
+                label.extend(paddinglen*[-100])
             else:
                 
                 input_ids = [self.tokenizer.pad_token_id] * paddinglen + input_ids
