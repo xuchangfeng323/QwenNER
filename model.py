@@ -20,8 +20,8 @@ class Qwen4NER(nn.Module):
             target_modules=config.lora_target_modules,
         )
         self.qwen = get_peft_model(base_model, lora_config)
-    def generate(self,input_ids,attention_mask):
-        return self.qwen.generate(input_ids=input_ids,attention_mask=attention_mask,max_new_tokens=self.max_new_tokens,pad_token_id=self.qwen.config.pad_token_id)
+    def generate(self,input_ids,attention_mask,use_cache=True):
+        return self.qwen.generate(input_ids=input_ids,attention_mask=attention_mask,max_new_tokens=self.max_new_tokens,pad_token_id=self.qwen.config.pad_token_id,use_cache=use_cache)
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.qwen(input_ids=input_ids, attention_mask=attention_mask,labels=labels)
         return outputs

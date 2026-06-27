@@ -113,7 +113,7 @@ class Trainer:
         
     def eval(self,epoch, devdataLoader):
         self.model.eval()
-        self.model.config.use_cache=True
+        
         progress_bar = tqdm(devdataLoader, desc="Evaluation", position=0, leave=True)
         with torch.no_grad():
             for batch in progress_bar:
@@ -124,7 +124,7 @@ class Trainer:
                 entities=batch["entities"]
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
-                generated_ids = self.model.generate(input_ids, attention_mask)
+                generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]
@@ -161,7 +161,7 @@ class Trainer:
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
                 labels = labels.to(self.device)
-                generated_ids = self.model.generate(input_ids, attention_mask)
+                generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]
