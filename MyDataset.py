@@ -56,36 +56,44 @@ class bc2gmDataset(Dataset):
     def collate_fn(self, batch):
         max_len = 0
         input_ids_list = []
-        attention_masks_list = []
+        input_attention_masks_list = []
         labels_list = []
+        output_list = []
+        output_attention_masks_list = []
         for item in batch:
             instruct_text = self._make_inst_text(item)
-            output_text = item["output"]
+            output_text = item["output"]+"<<|im_end|>"
             instrct_enc = self.tokenizer(instruct_text, add_special_tokens=False)
             output_enc = self.tokenizer(output_text, add_special_tokens=False)
-            input_ids = instrct_enc["input_ids"] + output_enc["input_ids"]
-            attention_mask = instrct_enc["attention_mask"] + output_enc["attention_mask"]
+            input_ids = instrct_enc["input_ids"]
+            output_ids = output_enc["input_ids"]
+            attention_mask = instrct_enc["attention_mask"]
             label = [-100] * len(instrct_enc["input_ids"]) + output_enc["input_ids"]
             input_ids_list.append(input_ids)
-            attention_masks_list.append(attention_mask)
+            input_attention_masks_list.append(attention_mask)
             labels_list.append(label)
-            max_len = max(max_len, len(input_ids))
+            output_list.append(output_ids)
+            output_attention_masks_list.append(output_enc["attention_mask"])
+            max_len = max(max_len, len(input_ids)+len(output_ids))
 
         max_len = min(max_len, self.max_length)
 
         padded_input_ids, padded_masks, padded_labels = [], [], []
-        for input_ids, attention_mask, label in zip(input_ids_list, attention_masks_list, labels_list):
-            input_ids = input_ids[:max_len]
-            attention_mask = attention_mask[:max_len]
-            label = label[:max_len]
-            paddinglen = max_len - len(input_ids)
+        for input_ids, attention_mask, label, output_ids, output_attention_mask in zip(input_ids_list, input_attention_masks_list, labels_list, output_list, output_attention_masks_list):
+            
 
             if self.is_train:
+                input_ids = input_ids+output_ids
+                input_ids = input_ids[:max_len]
+                attention_mask = attention_mask+output_attention_mask
+                attention_mask = attention_mask[:max_len]
+                label = label[:max_len]
+                paddinglen = max_len - len(input_ids)
                 input_ids.extend(paddinglen*[self.tokenizer.pad_token_id])
                 attention_mask.extend(paddinglen*[0])
                 label.extend(paddinglen*[-100])
             else:
-                
+                paddinglen = max_len - len(input_ids)
                 input_ids = [self.tokenizer.pad_token_id] * paddinglen + input_ids
                 attention_mask = [0] * paddinglen + attention_mask
                 label = [-100] * paddinglen + label
