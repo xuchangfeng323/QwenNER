@@ -15,6 +15,7 @@ class bc2gmDataset(Dataset):
         self.tokenizer = args.tokenizer
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
+            self.tokenizer.add_special_tokens({'pad_token': self.tokenizer.eos_token})
         self.max_length = args.max_length
         self.prompt = args.prompt
     def __len__(self):
