@@ -93,6 +93,9 @@ class bc2gmDataset(Dataset):
                 attention_mask.extend(paddinglen*[0])
                 label.extend(paddinglen*[-100])
             else:
+                input_ids = input_ids[:max_len]
+                attention_mask = attention_mask[:max_len]
+                label = label[:max_len]
                 paddinglen = max_len - len(input_ids)
                 input_ids = [self.tokenizer.pad_token_id] * paddinglen + input_ids
                 attention_mask = [0] * paddinglen + attention_mask
