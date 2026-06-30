@@ -62,7 +62,7 @@ class bc2gmDataset(Dataset):
         output_attention_masks_list = []
         for item in batch:
             instruct_text = self._make_inst_text(item)
-            output_text = item["output"]+"<<|im_end|>"
+            output_text = item["output"]+"<|im_end|>"
             instrct_enc = self.tokenizer(instruct_text, add_special_tokens=False)
             output_enc = self.tokenizer(output_text, add_special_tokens=False)
             input_ids = instrct_enc["input_ids"]
@@ -99,7 +99,8 @@ class bc2gmDataset(Dataset):
                 paddinglen = max_len - len(input_ids)
                 input_ids = [self.tokenizer.pad_token_id] * paddinglen + input_ids
                 attention_mask = [0] * paddinglen + attention_mask
-                label = [-100] * paddinglen + label
+                label_padding = max_len - len(label)
+                label = [-100] * label_padding + label
 
             padded_input_ids.append(torch.tensor(input_ids))
             padded_masks.append(torch.tensor(attention_mask))

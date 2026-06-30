@@ -68,7 +68,6 @@ class Trainer:
                 labels = batch["labels"]
                 texts = batch["text"]
                 entities = batch["entities"]
-                
                 self.optimizer.zero_grad()
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
@@ -77,6 +76,8 @@ class Trainer:
                 loss=outputs.loss
                 del outputs
                 loss.backward()
+                trainable_params = [p for p in self.model.parameters() if p.requires_grad]
+                torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
                 self.optimizer.step()
                 if self.scheduler is not None:
                     self.scheduler.step()
@@ -124,7 +125,7 @@ class Trainer:
                 entities=batch["entities"]
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
-                generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True)
+                generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True,skip_special_tokens=True)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]

@@ -146,6 +146,7 @@ class Metrics:
         micro_f1 = 2 * micro_p * micro_r / (micro_p + micro_r + self.eps)
         df.loc['micro_avg'] = [micro_p, micro_r, micro_f1, float('nan')]
         self.result_df = df
+        print(counts)
         return df
                 
         
