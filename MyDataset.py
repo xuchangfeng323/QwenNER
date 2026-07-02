@@ -1,9 +1,12 @@
 from __future__ import annotations
+from dataclasses import dataclass
+from typing import Dict
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 import torch
 import json
 from torch.utils.data import DataLoader
+from template import template_dict
 class bc2gmDataset(Dataset):
     def __init__(self, args: Arguments, data_path: str, is_train: bool = True):
 
@@ -18,6 +21,7 @@ class bc2gmDataset(Dataset):
             self.tokenizer.add_special_tokens({'pad_token': self.tokenizer.eos_token})
         self.max_length = args.max_length
         self.prompt = args.prompt
+        self.template = template_dict[args.template_name]
     def __len__(self):
         return len(self.texts)
     def __getitem__(self, idx):
@@ -45,16 +49,14 @@ class bc2gmDataset(Dataset):
 
     def set_label2id(self, label2id):
         self.label2id=label2id
+
     def _make_inst_text(self, item):
-        
-        return (
-            f"<|im_start|>system\n{self.prompt}<|im_end|>\n"
-            f"<|im_start|>user\n{item['text']}<|im_end|>\n"
-            f"<|im_start|>assistant\n"
-        )
+        return self.template.system_format.format(content=self.prompt) + self.template.user_format.format(content=item['text'])
+
 
     def collate_fn(self, batch):
-        max_len = 0
+        max_len_train = 0
+        max_len_eval = 0
         input_ids_list = []
         input_attention_masks_list = []
         labels_list = []
@@ -62,7 +64,7 @@ class bc2gmDataset(Dataset):
         output_attention_masks_list = []
         for item in batch:
             instruct_text = self._make_inst_text(item)
-            output_text = item["output"]+"<|im_end|>"
+            output_text = self.template.assistant_format.format(content=item["output"])
             instrct_enc = self.tokenizer(instruct_text, add_special_tokens=False)
             output_enc = self.tokenizer(output_text, add_special_tokens=False)
             input_ids = instrct_enc["input_ids"]
@@ -74,9 +76,10 @@ class bc2gmDataset(Dataset):
             labels_list.append(label)
             output_list.append(output_ids)
             output_attention_masks_list.append(output_enc["attention_mask"])
-            max_len = max(max_len, len(input_ids)+len(output_ids))
+            max_len_train = max(max_len_train, len(input_ids)+len(output_ids))
+            max_len_eval = max(max_len_eval, len(input_ids))
 
-        max_len = min(max_len, self.max_length)
+        
 
         padded_input_ids, padded_masks, padded_labels = [], [], []
         for input_ids, attention_mask, label, output_ids, output_attention_mask in zip(input_ids_list, input_attention_masks_list, labels_list, output_list, output_attention_masks_list):
@@ -84,6 +87,7 @@ class bc2gmDataset(Dataset):
 
             if self.is_train:
                 input_ids = input_ids+output_ids
+                max_len = min(max_len_train, self.max_length)
                 input_ids = input_ids[:max_len]
                 attention_mask = attention_mask+output_attention_mask
                 attention_mask = attention_mask[:max_len]
@@ -93,6 +97,7 @@ class bc2gmDataset(Dataset):
                 attention_mask.extend(paddinglen*[0])
                 label.extend(paddinglen*[-100])
             else:
+                max_len = min(max_len_eval, self.max_length)
                 input_ids = input_ids[:max_len]
                 attention_mask = attention_mask[:max_len]
                 label = label[:max_len]

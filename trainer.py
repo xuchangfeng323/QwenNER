@@ -5,6 +5,7 @@ from model import Qwen4NER
 import argparse
 import torch.nn as nn
 from transformers import  get_scheduler
+from MyDataset import bc2gmDataset
 from utils import get_next, write_log, Arguments, Metrics, EarlyStop, load_data
 import os
 class Trainer:
@@ -125,7 +126,7 @@ class Trainer:
                 entities=batch["entities"]
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
-                generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True,skip_special_tokens=True)
+                generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]
@@ -164,7 +165,7 @@ class Trainer:
                 labels = labels.to(self.device)
                 generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
-                response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+                response = self.config.tokenizer.batch_decode(generated_ids)
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]
                 self.metrics.add_entities(pred_entities_batch, entities, texts)
                 
@@ -189,9 +190,15 @@ if __name__ == "__main__":
     parser.add_argument('--arg', type=str, default='./args/arg1.json')
     args = parser.parse_args()
     args=Arguments(args.arg)
-    traindataLoader, devdataLoader, testdataLoader= load_data(args)
+    train_dataset = bc2gmDataset(args, args.data_path + "train.json", is_train=True)
+    dev_dataset = bc2gmDataset(args, args.data_path + "dev.json", is_train=False)
+    test_dataset = bc2gmDataset(args, args.data_path + "test.json", is_train=False)
+    dev_dataloader = dev_dataset.get_data_loader(batch_size=args.batch_size, shuffle=False)
+    test_dataloader = test_dataset.get_data_loader(batch_size=args.batch_size, shuffle=False)
+    train_dataloader = train_dataset.get_data_loader(batch_size=args.batch_size, shuffle=True)
+
     model=Qwen4NER(args)
     optimizer = model.get_optimizer()
     trainer=Trainer(args)
-    trainer.train(traindataLoader, devdataLoader, testdataLoader, model, optimizer)  
+    trainer.train(train_dataloader, dev_dataloader, test_dataloader, model, optimizer)  
         

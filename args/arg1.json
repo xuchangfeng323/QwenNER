@@ -1,16 +1,16 @@
 {
-    "num_epochs": 10,
-    "batch_size": 2,
+    "num_epochs": 1,
+    "batch_size": 4,
     "lr": 5e-4,
     "weight_decay": 0.01,
     "device": "cuda:0",
     "model_name": "Qwen2.5-0.5-instruct",
-    "model_dir": "model/Qwen2.5-0.5B-Instruct",
+    "model_dir": "model/Qwen2.5-0.5B",
     "dropout_rate": 0.2,
     "embedding_dim": 896,
     "data_path": "./data/",
     "max_length": 512,
-    "max_new_tokens": 128,
+    "max_new_tokens": 512,
     "patience":10,
     "monitor": "val_f1",
     "delta":0.0001,
@@ -20,6 +20,8 @@
     "lora_r": 16,
     "lora_alpha": 32,
     "lora_dropout": 0.05,
+    "method": "none",
     "lora_target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
-    "prompt": "你是一个生物医学命名实体识别专家。你的任务是从给定的英文生物医学文本中识别基因和蛋白质实体（GENE）。\n\n实体类型定义：\n- GENE: 基因或蛋白质名称，包括基因产物、酶、受体、抗体、细胞因子等\n\n请严格按照以下JSON格式输出识别结果：\n{\"entities\": [{\"name\": \"实体名称\", \"type\": \"实体类别\"}]}\n\n要求：\n1. 必须输出合法的JSON字符串，不要包含任何额外解释\n2. 如果句子中没有找到任何实体，输出 {\"entities\": []}\n3. 实体名称必须与原文中的表述完全一致，不要修改或翻译\n4. 每个实体单独列出，不要合并不同的实体"
+    "prompt": "你是一个生物医学命名实体识别专家。你的任务是从给定的英文生物医学文本中识别基因和蛋白质实体（GENE）。实体类型定义：- GENE: 基因或蛋白质名称，包括基因产物、酶、受体、抗体、细胞因子等请严格按照以下JSON格式输出识别结果：{\"entities\": [{\"name\": \"实体名称\", \"type\": \"实体类别\"}]}要求：必须输出合法的JSON字符串，不要有其他的内容，请严格按照已经有的类进行识别，没有定义的类不要识别，只有GENE这一个类,句子是以下句子。不要有推理的内容，识别的类别要是原来就有的",
+    "template_name": "qwen"
 }

@@ -11,7 +11,7 @@ class Qwen4NER(nn.Module):
         self.lr=config.lr
         self.max_new_tokens=config.max_new_tokens
         self.weight_decay=config.weight_decay
-        base_model = AutoModelForCausalLM.from_pretrained(config.model_dir, trust_remote_code=True)
+        base_model = AutoModelForCausalLM.from_pretrained(config.model_dir, trust_remote_code=True,attn_implementation="eager")
         base_model.config.pad_token_id = config.tokenizer.pad_token_id
         lora_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM,
@@ -20,9 +20,20 @@ class Qwen4NER(nn.Module):
             lora_dropout=config.lora_dropout,
             target_modules=config.lora_target_modules,
         )
-        self.qwen = get_peft_model(base_model, lora_config)
-    def generate(self,input_ids,attention_mask,use_cache=True):
-        return self.qwen.generate(input_ids=input_ids,attention_mask=attention_mask,max_new_tokens=self.max_new_tokens,pad_token_id=self.qwen.config.pad_token_id,use_cache=use_cache)
+        if config.method == "lora":
+            self.qwen = get_peft_model(base_model, lora_config)
+        else:
+            self.qwen = base_model
+    def generate(self, input_ids, attention_mask, use_cache=True, **kwargs):
+        return self.qwen.generate(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            max_new_tokens=self.max_new_tokens,
+            pad_token_id=self.qwen.config.pad_token_id,
+            eos_token_id=self.qwen.config.eos_token_id,
+            use_cache=use_cache,
+            
+        )
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.qwen(input_ids=input_ids, attention_mask=attention_mask,labels=labels)
         return outputs

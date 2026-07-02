@@ -3,7 +3,7 @@ import argparse
 import random
 import pandas as pd
 from transformers import AutoTokenizer
-from MyDataset import bc2gmDataset
+from MyDataset import bc2gmDataset, template_dict
 import torch
 import json
 import numpy as np
@@ -269,6 +269,9 @@ class EarlyStop():
         if is_best:
             self.best_model_path = checkpoint_path
             print(f"更新最佳模型: {checkpoint_path} (监控指标 '{self.monitor}' = {dev_metrics:.6f})")
+
+
+
 class Arguments:
     def __init__(self, config_path="arguments.json"):
         self.args_dict = self._load_json_config(config_path)
@@ -276,10 +279,12 @@ class Arguments:
         self.label2id=None
         self.id2label=None
         self.tokenizer=None
+        self.template=None
         for key, value in self.args_dict.items():
             setattr(self, key, value)
         self._set_seed()
         self._set_tokenizer()
+        self._set_template()
         
     def _set_seed(self):
         seed = self.args_dict.get('seed', 42)
@@ -293,6 +298,10 @@ class Arguments:
         self.tokenizer = AutoTokenizer.from_pretrained(self.args_dict['model_dir'], trust_remote_code=True,use_fast=False,padding_side='left',)
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.tokenizer.add_special_tokens({'pad_token': self.tokenizer.eos_token})
+
+    def _set_template(self):
+        template_name = self.args_dict.get('template_name', 'qwen')
+        self.template = template_dict.get(template_name, None)
     def _load_json_config(self, config_path):
         if os.path.exists(config_path):
             with open(config_path, 'r', encoding='utf-8') as f:
