@@ -84,6 +84,7 @@ class Trainer:
                     self.scheduler.step()
                 total_train_loss += loss.item()
                 loss_record=loss.item()
+                del loss
                 progress_bar.set_postfix({"Loss": loss_record})
                 del loss
                 if step % 50 == 0:
