@@ -89,9 +89,13 @@ class Metrics:
                     self.all_true_entities.add((self.seq_count,entity_type,entity_pos[0],entity_pos[1]))
             occurrences = set()
             for pred_entity in preds:
-                entity_type = pred_entity['type']
-                entity_name = pred_entity['name']
-                if not entity_name :
+                if not isinstance(pred_entity, dict):
+                    continue
+                entity_type = pred_entity.get('type')
+                entity_name = pred_entity.get('name')
+                if not entity_name or not entity_type:
+                    continue
+                if entity_type not in self.entity_types:
                     continue
                 start = texts.find(entity_name)
                 

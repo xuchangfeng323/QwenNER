@@ -84,7 +84,7 @@ class Trainer:
                     self.scheduler.step()
                 total_train_loss += loss.item()
                 loss_record=loss.item()
-                del loss
+                
                 progress_bar.set_postfix({"Loss": loss_record})
                 del loss
                 if step % 50 == 0:
@@ -146,11 +146,9 @@ class Trainer:
         
         return results_dict
     def test(self, testdataLoader):
-        checkpoint = torch.load(self.early_stop.best_model_path, map_location=self.device, weights_only=False)
-        self.model.load_state_dict(checkpoint["model"])
-        self.model = self.model.to(self.device)
-        self.model.eval()
-        
+        model=self.model.get_trained_model(self.early_stop.best_model_path)
+        model.eval()
+        model = model.to(self.device)
 
         progress_bar = tqdm(testdataLoader, desc="Testing", position=0, leave=True)
         with torch.no_grad():
@@ -166,10 +164,10 @@ class Trainer:
                 labels = labels.to(self.device)
                 generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
-                response = self.config.tokenizer.batch_decode(generated_ids)
+                response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]
                 self.metrics.add_entities(pred_entities_batch, entities, texts)
-                
+
         results = self.metrics.get_results()
         results_dict = self.metrics.get_result_dict()
         
