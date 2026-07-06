@@ -1,6 +1,6 @@
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 import torch
-from peft import LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_training, PeftModel
 from utils import Arguments
 import torch.nn as nn
 
