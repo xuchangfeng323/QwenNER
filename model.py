@@ -58,3 +58,33 @@ class Qwen4NER(nn.Module):
         return optimizer
     def get_model(self):
         return self.model
+    def load_model(self, save_path):
+        if config.method == "lora":
+            base_model = AutoModelForCausalLM.from_pretrained(
+                config.model_dir,
+                trust_remote_code=True,
+            )
+            load_model = PeftModel(base_model, save_path)
+            merge_model = load_model.merge_and_unload()
+            return merge_model
+        elif config.method == "qlora":
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_compute_dtype=torch.bfloat16,
+            )
+            base_model = AutoModelForCausalLM.from_pretrained(
+                config.model_dir,
+                trust_remote_code=True,
+                quantization_config=bnb_config,
+            )
+            load_model = PeftModel(base_model, save_path)
+            merge_model = load_model.merge_and_unload()
+            return merge_model
+        else:
+            base_model = AutoModelForCausalLM.from_pretrained(
+                config.model_dir,
+                trust_remote_code=True,
+            )
+            return base_model

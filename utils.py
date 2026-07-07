@@ -9,6 +9,7 @@ import json
 import numpy as np
 from collections import Counter
 global label2id, id2label
+from accelerate.utils import unwrap_model
 def get_next(prefix_dir):
     if not os.path.exists(prefix_dir):
         os.makedirs(prefix_dir+'/exp1')
@@ -257,8 +258,15 @@ class EarlyStop():
         
     def save_checkpoint(self, model,is_best):
         if not isinstance(model, PreTrainedModel):
-            if isinstance(unwrap_model(model), PreTrainedModel):
+            if isinstance(model, PeftModel):
+                model.save_pretrained(self.save_dir)
+            elif isinstance(unwrap_model(model), PreTrainedModel):
                 unwrap_model(model).save_pretrained(self.save_dir, state_dict=model.state_dict())
+            else:
+                torch.save(model.state_dict(), self.save_dir)
+        else:
+            model.save_pretrained(self.save_dir, state_dict=model.state_dict())
+            
                 
 
             
