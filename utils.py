@@ -208,30 +208,30 @@ class EarlyStop():
                 
                 if self.counter > self.patience:
                     self.early_stop = True
-                    self.save_checkpoint(model, optimizer, scheduler, epoch,acc,False)
+                    self.save_checkpoint(model,False)
             else:
                 self.best_score = acc
                 self.counter = 0
-                self.save_checkpoint(model, optimizer, scheduler, epoch,acc,True)
+                self.save_checkpoint(model,True)
         elif self.monitor == 'val_loss':
             if self.best_score is None:
                 self.best_score = loss
-                self.save_checkpoint(model, optimizer, scheduler, epoch,loss,True)
+                self.save_checkpoint(model,True)
                 return
             if self.best_score - loss  < self.delta:
                 self.counter += 1
                 
                 if self.counter > self.patience:
                     self.early_stop = True
-                    self.save_checkpoint(model, optimizer, scheduler, epoch,loss,False)
+                    self.save_checkpoint(model,False)
             else:
                 self.best_score = loss
                 self.counter = 0
-                self.save_checkpoint(model, optimizer, scheduler, epoch,loss,True)
+                self.save_checkpoint(model,True)
         if self.monitor == 'val_f1':
             if self.best_score is None :
                 self.best_score = f1_score
-                self.save_checkpoint(model, optimizer, scheduler, epoch,f1_score,True)
+                self.save_checkpoint(model,True)
                 return 
             
 
@@ -240,39 +240,28 @@ class EarlyStop():
                 
                 if self.counter > self.patience:
                     self.early_stop = True
-                    self.save_checkpoint(model, optimizer, scheduler, epoch,f1_score,False)
+                    self.save_checkpoint(model,False)
             else:
                 self.best_score = f1_score
                 self.counter = 0
-                self.save_checkpoint(model, optimizer, scheduler, epoch,f1_score,True)
+                self.save_checkpoint(model,True)
         if epoch==self.config.num_epochs-1:
             if self.monitor == 'val_acc':
-                self.save_checkpoint(model, optimizer, scheduler, epoch,acc,False)
+                self.save_checkpoint(model,False)
             elif self.monitor == 'val_loss':
-                self.save_checkpoint(model, optimizer, scheduler, epoch,loss,False)
+                self.save_checkpoint(model,False)
             elif self.monitor == 'val_f1':
-                self.save_checkpoint(model, optimizer, scheduler, epoch,f1_score,False)
+                self.save_checkpoint(model,False)
             return 
         return self.early_stop
         
-    def save_checkpoint(self, model, optimizer, scheduler, epoch, dev_metrics,is_best):
-        checkpoint_name = f"checkpoint_epoch_{epoch + 1}.pt"
-        checkpoint_path = os.path.join(self.save_dir, checkpoint_name)
-        checkpoint = {
-            'epoch': epoch,
-            'model': model.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'scheduler': scheduler.state_dict(),
-            'peft_config': model.qwen.peft_config,
-            'base_model_name': self.config.model_dir,
-        }
-        if is_best and self.best_model_path is not None:
-            os.remove(self.best_model_path)
-        torch.save(checkpoint, checkpoint_path)
-        print(f"保存 epoch {epoch + 1} 的 checkpoint: {checkpoint_path}")
-        if is_best:
-            self.best_model_path = checkpoint_path
-            print(f"更新最佳模型: {checkpoint_path} (监控指标 '{self.monitor}' = {dev_metrics:.6f})")
+    def save_checkpoint(self, model,is_best):
+        if not isinstance(model, PreTrainedModel):
+            if isinstance(unwrap_model(model), PreTrainedModel):
+                unwrap_model(model).save_pretrained(self.save_dir, state_dict=model.state_dict())
+                
+
+            
 
 
 

@@ -196,8 +196,9 @@ if __name__ == "__main__":
     test_dataloader = test_dataset.get_data_loader(batch_size=args.batch_size, shuffle=False)
     train_dataloader = train_dataset.get_data_loader(batch_size=args.batch_size, shuffle=True)
 
-    model=Qwen4NER(args)
-    optimizer = model.get_optimizer()
+    model4ner=Qwen4NER(args)
+    model=model4ner.get_model()
+    optimizer = model4ner.get_optimizer()
     trainer=Trainer(args)
     trainer.train(train_dataloader, dev_dataloader, test_dataloader, model, optimizer)  
         
