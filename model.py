@@ -41,6 +41,7 @@ class Qwen4NER(nn.Module):
                 self.config.model_dir,
                 trust_remote_code=True,
                 quantization_config=bnb_config,
+                torch_dtype=torch.bfloat16,
 
             )
             base_model.config.pad_token_id = config.tokenizer.pad_token_id
