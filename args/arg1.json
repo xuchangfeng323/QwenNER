@@ -1,7 +1,7 @@
 {
     "num_epochs": 4,
     "batch_size": 8,
-    "lr": 5e-4,
+    "lr":2e-05,
     "weight_decay": 0.01,
     "device": "cuda:0",
     "model_name": "Qwen2.5-7B-Instruct",
