@@ -9,12 +9,13 @@ from MyDataset import bc2gmDataset
 from utils import get_next, write_log, Arguments, Metrics, EarlyStop, load_data
 import os
 class Trainer:
-    def __init__(self,config):
+    def __init__(self, config, model_config):
         self.optimizer=None
         self.scheduler=None
         self.device=config.device
         self.num_epochs=config.num_epochs
         self.config=config
+        self.model_config=model_config
         print(config.get_args_dict())
         self.metrics = Metrics(config)
         self.best_accuracy = 0.0
@@ -26,7 +27,6 @@ class Trainer:
     
     def train(self,traindataLoader, devdataLoader, testdataLoader, model,optimizer):
         self.optimizer=optimizer
-        
         self.model=model
         self.scheduler=get_scheduler(
             "linear",
@@ -127,10 +127,11 @@ class Trainer:
                 entities=batch["entities"]
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
-                generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True)
+                generated_ids = self.model.generate(input_ids, attention_mask=attention_mask,use_cache=True,max_new_tokens=self.config.max_new_tokens,pad_token_id=self.model.config.pad_token_id,eos_token_id=self.model.config.eos_token_id)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]
+                
                 self.metrics.add_entities(pred_entities_batch, entities, texts)
         results = self.metrics.get_results()
         print(results)
@@ -146,9 +147,9 @@ class Trainer:
         
         return results_dict
     def test(self, testdataLoader):
-        model=self.model.get_trained_model(self.early_stop.best_model_path)
-        model.eval()
-        model = model.to(self.device)
+        self.model = self.model_config.load_adapter(self.early_stop.best_model_path)
+        self.model.eval()
+        self.model = self.model.to(self.device)
 
         progress_bar = tqdm(testdataLoader, desc="Testing", position=0, leave=True)
         with torch.no_grad():
@@ -162,7 +163,7 @@ class Trainer:
                 input_ids = input_ids.to(self.device)
                 attention_mask = attention_mask.to(self.device)
                 labels = labels.to(self.device)
-                generated_ids = self.model.generate(input_ids, attention_mask,use_cache=True)
+                generated_ids = self.model.generate(input_ids, attention_mask=attention_mask, labels=labels, max_new_tokens=self.config.max_new_tokens,use_cache=True, pad_token_id=self.model.config.pad_token_id,eos_token_id=self.model.config.eos_token_id)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]
@@ -192,13 +193,13 @@ if __name__ == "__main__":
     train_dataset = bc2gmDataset(args, args.data_path + "train.json", is_train=True)
     dev_dataset = bc2gmDataset(args, args.data_path + "dev.json", is_train=False)
     test_dataset = bc2gmDataset(args, args.data_path + "test.json", is_train=False)
-    dev_dataloader = dev_dataset.get_data_loader(batch_size=args.batch_size, shuffle=False)
-    test_dataloader = test_dataset.get_data_loader(batch_size=args.batch_size, shuffle=False)
+    dev_dataloader = dev_dataset.get_data_loader(batch_size=args.batch_size * 4, shuffle=False)
+    test_dataloader = test_dataset.get_data_loader(batch_size=args.batch_size * 4, shuffle=False)
     train_dataloader = train_dataset.get_data_loader(batch_size=args.batch_size, shuffle=True)
 
     model4ner=Qwen4NER(args)
     model=model4ner.get_model()
     optimizer = model4ner.get_optimizer()
-    trainer=Trainer(args)
-    trainer.train(train_dataloader, dev_dataloader, test_dataloader, model, optimizer)  
+    trainer=Trainer(args, model4ner)
+    trainer.train(train_dataloader, dev_dataloader, test_dataloader, model, optimizer)
         

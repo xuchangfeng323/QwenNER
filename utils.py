@@ -1,15 +1,19 @@
 import os
 import argparse
+from accelerate import Accelerator
 import random
 import pandas as pd
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedModel
+from peft import PeftModel
 from MyDataset import bc2gmDataset, template_dict
 import torch
 import json
 import numpy as np
 from collections import Counter
+import shutil
+
 global label2id, id2label
-from accelerate.utils import unwrap_model
+from accelerate import Accelerator
 def get_next(prefix_dir):
     if not os.path.exists(prefix_dir):
         os.makedirs(prefix_dir+'/exp1')
@@ -256,16 +260,23 @@ class EarlyStop():
             return 
         return self.early_stop
         
-    def save_checkpoint(self, model,is_best):
+    def save_checkpoint(self, model, is_best):
+        if is_best and self.best_model_path is not None and os.path.exists(self.best_model_path):
+            if os.path.isdir(self.best_model_path):
+                shutil.rmtree(self.best_model_path)
+            else:
+                os.remove(self.best_model_path)
         if not isinstance(model, PreTrainedModel):
             if isinstance(model, PeftModel):
                 model.save_pretrained(self.save_dir)
-            elif isinstance(unwrap_model(model), PreTrainedModel):
-                unwrap_model(model).save_pretrained(self.save_dir, state_dict=model.state_dict())
+            elif isinstance(Accelerator.unwrap_model(model), PreTrainedModel):
+                Accelerator.unwrap_model(model).save_pretrained(self.save_dir, state_dict=model.state_dict())
             else:
                 torch.save(model.state_dict(), self.save_dir)
         else:
             model.save_pretrained(self.save_dir, state_dict=model.state_dict())
+        if is_best:
+            self.best_model_path = self.save_dir
             
                 
 
