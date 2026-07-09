@@ -35,7 +35,7 @@ pip install -r requirements.txt
 ### 2. 下载基础模型
 
 ```bash
-# 下载 Qwen2.5-7B-Instruct（推荐）
+# 下载 Qwen2.5-7B-Instruct
 python download_model.py
 ```
 
