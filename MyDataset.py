@@ -13,7 +13,7 @@ class bc2gmDataset(Dataset):
         self.texts = []
         self.label_list = []
         self.get_sentences(data_path)
-        self.label2id=None
+        
         self.is_train=is_train
         self.tokenizer = args.tokenizer
         if self.tokenizer.pad_token is None:

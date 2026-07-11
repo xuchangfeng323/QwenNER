@@ -287,9 +287,8 @@ class EarlyStop():
 class Arguments:
     def __init__(self, config_path="arguments.json"):
         self.args_dict = self._load_json_config(config_path)
-        self.class_num=None
-        self.label2id=None
-        self.id2label=None
+        
+        
         self.tokenizer=None
         self.template=None
         for key, value in self.args_dict.items():
