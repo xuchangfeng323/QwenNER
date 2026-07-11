@@ -47,8 +47,7 @@ class bc2gmDataset(Dataset):
             all_entities.append(entity['type'])
         return all_entities
 
-    def set_label2id(self, label2id):
-        self.label2id=label2id
+    
 
     def _make_inst_text(self, item):
         return self.template.system_format.format(content=self.prompt) + self.template.user_format.format(content=item['text'])
