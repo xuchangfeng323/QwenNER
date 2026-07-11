@@ -308,7 +308,7 @@ class Arguments:
     def _set_tokenizer(self):
         self.tokenizer = AutoTokenizer.from_pretrained(self.args_dict['model_dir'], trust_remote_code=True,use_fast=False,padding_side='left',)
         self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.tokenizer.add_special_tokens({'pad_token': self.tokenizer.eos_token})
+
 
     def _set_template(self):
         template_name = self.args_dict.get('template_name', 'qwen')
