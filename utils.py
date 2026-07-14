@@ -1,6 +1,5 @@
 import os
 import argparse
-from accelerate import Accelerator
 import random
 import pandas as pd
 from transformers import AutoTokenizer, PreTrainedModel
@@ -11,8 +10,6 @@ import json
 import numpy as np
 from collections import Counter
 import shutil
-
-global label2id, id2label
 from accelerate import Accelerator
 def get_next(prefix_dir):
     if not os.path.exists(prefix_dir):

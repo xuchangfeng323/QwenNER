@@ -16,5 +16,6 @@ $$
 $$
 h = W_0 x + \frac{\alpha}{r} BAx
 $$
-
+### QLoRA
+QL
 # 人类反馈强化学习RHLF

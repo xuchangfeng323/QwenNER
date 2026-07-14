@@ -7,6 +7,7 @@ import torch.nn as nn
 from transformers import  get_scheduler
 from MyDataset import bc2gmDataset
 from utils import get_next, write_log, Arguments, Metrics, EarlyStop, load_data
+from peft import PeftModel
 import os
 class Trainer:
     def __init__(self, config, model_config):
@@ -37,7 +38,7 @@ class Trainer:
         model.to(self.device)
         swanlab.init(
             project="qwen4ner",  
-            name="qwen2.5-ner",
+            name=f"{self.config.model_name}-{self.config.method}-{self.config.lora_target_modules}",
             config={
                 "num_epochs": self.config.num_epochs,
                 "lr": self.config.lr,
@@ -52,6 +53,8 @@ class Trainer:
                 "monitor": self.config.monitor,
                 "delta": self.config.delta,
                 "dropout_rate": self.config.dropout_rate,
+                "template_name": self.config.template_name,
+                "method": self.config.method,
                 "lora_r": self.config.lora_r,
                 "lora_alpha": self.config.lora_alpha,
                 "lora_dropout": self.config.lora_dropout,
@@ -76,6 +79,8 @@ class Trainer:
                 outputs = self.model(input_ids, attention_mask, labels=labels)
                 loss=outputs.loss
                 del outputs
+                del input_ids
+                del attention_mask
                 loss.backward()
                 trainable_params = [p for p in self.model.parameters() if p.requires_grad]
                 torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
@@ -109,15 +114,21 @@ class Trainer:
             if self.early_stop(epoch, avg_train_loss, None, f1, model, optimizer, self.scheduler):
                 break
 
-        self.test(testdataLoader)
+        self.eval(epoch,testdataLoader,is_test=True)
         swanlab.finish()
             
     
         
-    def eval(self,epoch, devdataLoader):
+    def eval(self,epoch, dataLoader,is_test=False):
+
+        if is_test:
+            del self.model
+            self.model = self.model_config.load_adapter(self.early_stop.best_model_path)
         self.model.eval()
-        
-        progress_bar = tqdm(devdataLoader, desc="Evaluation", position=0, leave=True)
+        self.model = self.model.to(self.device)
+
+        desc = "Evaluation" if not is_test else "Testing"
+        progress_bar = tqdm(dataLoader, desc=desc, position=0, leave=True)
         with torch.no_grad():
             for batch in progress_bar:
                 input_ids=batch["input_ids"]
@@ -138,53 +149,24 @@ class Trainer:
         results_dict = self.metrics.get_result_dict()
         self.metrics.reset()
             
-        print(f"Eval F1 Score: {results_dict['micro_avg']['f1']:.4f}")
+        print(f"{desc} F1 Score: {results_dict['micro_avg']['f1']:.4f}")
         
         swanlab.log({
-            "eval/f1": results_dict['micro_avg']['f1'],
+            f"{desc}/f1": results_dict['micro_avg']['f1'],
         })
-
-        
-        return results_dict
-    def test(self, testdataLoader):
-        self.model = self.model_config.load_adapter(self.early_stop.best_model_path)
-        self.model.eval()
-        self.model = self.model.to(self.device)
-
-        progress_bar = tqdm(testdataLoader, desc="Testing", position=0, leave=True)
-        with torch.no_grad():
-            for  batch in progress_bar:
-                input_ids = batch["input_ids"]
-                attention_mask = batch["attention_mask"]
-                labels = batch["labels"]
-                texts = batch["text"]
-                entities = batch["entities"]
-                
-                input_ids = input_ids.to(self.device)
-                attention_mask = attention_mask.to(self.device)
-                labels = labels.to(self.device)
-                generated_ids = self.model.generate(input_ids, attention_mask=attention_mask, labels=labels, max_new_tokens=self.config.max_new_tokens,use_cache=True, pad_token_id=self.model.config.pad_token_id,eos_token_id=self.model.config.eos_token_id)
-                generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
-                response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
-                pred_entities_batch = [self.metrics.parse_json(r) for r in response]
-                self.metrics.add_entities(pred_entities_batch, entities, texts)
-
-        results = self.metrics.get_results()
-        results_dict = self.metrics.get_result_dict()
-        
-         
-        
-        print(f"Test F1 Score: {results_dict['micro_avg']['f1']:.4f}")
-        self.metrics.reset()
         log_dict = {
-            "test/results": results_dict
+            f"{desc}/results": results_dict
         }
-        write_log(self.log_dir, {"test": log_dict})
-        swanlab.log({
-            "test/f1": results_dict['micro_avg']['f1'],
+        write_log(self.log_dir, log_dict)
+        if is_test:
+            self.save_model()
             
-        })
-        print(results)
+        return results_dict
+    
+    def save_model(self):
+        if isinstance(self.model, PeftModel):
+            self.model = self.model.merge_and_unload()
+        self.model.save_pretrained(os.path.join(self.save_dir, "best_model"))
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--arg', type=str, default='./args/arg1.json')
