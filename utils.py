@@ -29,16 +29,6 @@ def get_next(prefix_dir):
 
 
 
-def load_data(config):
-    data_dir=config.data_path
-    train_dataset = bc2gmDataset(config,os.path.join(data_dir, 'train.json'),is_train=True)
-    test_dataset = bc2gmDataset(config,os.path.join(data_dir, 'test.json'),is_train=False)
-    dev_dataset = bc2gmDataset(config,os.path.join(data_dir, 'dev.json'),is_train=False)
-    
-    train_dataLoader = train_dataset.get_data_loader(batch_size=config.batch_size)
-    dev_dataLoader = dev_dataset.get_data_loader(batch_size=config.batch_size,shuffle=False)
-    test_dataLoader = test_dataset.get_data_loader(batch_size=config.batch_size,shuffle=False)
-    return train_dataLoader, dev_dataLoader, test_dataLoader
 
 def write_log(log_jsonl_path, log_dict):
 

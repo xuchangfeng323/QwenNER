@@ -6,7 +6,7 @@ import argparse
 import torch.nn as nn
 from transformers import  get_scheduler
 from MyDataset import bc2gmDataset
-from utils import get_next, write_log, Arguments, Metrics, EarlyStop, load_data
+from utils import get_next, write_log, Arguments, Metrics, EarlyStop
 from peft import PeftModel
 import os
 class Trainer:
@@ -29,6 +29,7 @@ class Trainer:
     def train(self,traindataLoader, devdataLoader, testdataLoader, model,optimizer):
         self.optimizer=optimizer
         self.model=model
+        trainable_params = [p for p in self.model.parameters() if p.requires_grad]
         self.scheduler=get_scheduler(
             "linear",
             optimizer,
@@ -82,7 +83,7 @@ class Trainer:
                 del input_ids
                 del attention_mask
                 loss.backward()
-                trainable_params = [p for p in self.model.parameters() if p.requires_grad]
+                
                 torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
                 self.optimizer.step()
                 if self.scheduler is not None:
