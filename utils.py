@@ -27,23 +27,6 @@ def get_next(prefix_dir):
         os.makedirs(prefix_dir+'/exp'+str(next_num))
         return prefix_dir+'/exp'+str(next_num)
 
-def build_label_mappings(labels, save_path=None):
-    unique_labels = set()
-    for seq in labels:
-        for tag in seq:
-            unique_labels.add(tag)
-    unique_labels = sorted(unique_labels)
-    
-    label2id = {label: i for i, label in enumerate(unique_labels)}
-    id2label = {i: label for label, i in label2id.items()}
-    if save_path:
-        mappings = {"label2id": label2id, "id2label": id2label}
-        with open(save_path, "w", encoding="utf-8") as f:
-            json.dump(mappings, f, ensure_ascii=False, indent=4)
-        print(f"Label mappings saved to {save_path}")
-    
-    return label2id, id2label
-
 
 
 def load_data(config):

@@ -123,6 +123,7 @@ class Trainer:
 
         if is_test:
             del self.model
+            torch.cuda.empty_cache()
             self.model = self.model_config.load_adapter(self.early_stop.best_model_path)
         self.model.eval()
         self.model = self.model.to(self.device)

@@ -82,8 +82,6 @@ class bc2gmDataset(Dataset):
 
         padded_input_ids, padded_masks, padded_labels = [], [], []
         for input_ids, attention_mask, label, output_ids, output_attention_mask in zip(input_ids_list, input_attention_masks_list, labels_list, output_list, output_attention_masks_list):
-            
-
             if self.is_train:
                 input_ids = input_ids+output_ids
                 max_len = min(max_len_train, self.max_length)

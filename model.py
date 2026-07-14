@@ -78,7 +78,8 @@ class Qwen4NER(nn.Module):
                 torch_dtype=torch.bfloat16,
 
             )
-        
+            self.base_model.config.pad_token_id = self.config.tokenizer.pad_token_id
+            
         self.model = PeftModel.from_pretrained(self.base_model, save_path)  
         return self.model
     def load_model(self, model_path):
