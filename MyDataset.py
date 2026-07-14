@@ -40,12 +40,7 @@ class bc2gmDataset(Dataset):
             data= json.load(f)
         self.texts = [item['sentence'] for item in data]
         self.label_list = [item['entities'] for item in data]
-    def get_entities(self,entities_list):
-
-        all_entities = []
-        for entity in entities_list:
-            all_entities.append(entity['type'])
-        return all_entities
+   
 
     
 
