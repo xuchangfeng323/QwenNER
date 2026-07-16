@@ -132,6 +132,7 @@ class Trainer:
 
         desc = "Evaluation" if not is_test else "Testing"
         progress_bar = tqdm(dataLoader, desc=desc, position=0, leave=True)
+        first_batch = True
         with torch.no_grad():
             for batch in progress_bar:
                 input_ids=batch["input_ids"]
@@ -144,7 +145,8 @@ class Trainer:
                 generated_ids = self.model.generate(input_ids, attention_mask=attention_mask,use_cache=True,max_new_tokens=self.config.max_new_tokens,pad_token_id=self.model.config.pad_token_id,eos_token_id=self.model.config.eos_token_id)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
-                if step == 0:
+                if first_batch:
+                    first_batch = False
                     print(f"\n{'='*60}")
                     print(f"[DEBUG eval] 模型生成示例 (前3条):")
                     print(f"{'='*60}")
