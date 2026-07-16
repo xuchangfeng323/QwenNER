@@ -33,7 +33,7 @@ class Qwen4NER(nn.Module):
             base_model = AutoModelForCausalLM.from_pretrained(
                 self.config.model_dir,
                 trust_remote_code=True,
-                torch_dtype=torch.bfloat16,
+                
 
             )
             base_model.config.pad_token_id = self.config.tokenizer.pad_token_id
@@ -51,7 +51,7 @@ class Qwen4NER(nn.Module):
                 self.config.model_dir,
                 trust_remote_code=True,
                 quantization_config=bnb_config,
-                torch_dtype=torch.bfloat16,
+                
 
             )
             base_model.config.pad_token_id = self.config.tokenizer.pad_token_id

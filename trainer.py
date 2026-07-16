@@ -188,8 +188,8 @@ if __name__ == "__main__":
     train_dataset = bc2gmDataset(args, args.data_path + "train.json", is_train=True)
     dev_dataset = bc2gmDataset(args, args.data_path + "dev.json", is_train=False)
     test_dataset = bc2gmDataset(args, args.data_path + "test.json", is_train=False)
-    dev_dataloader = dev_dataset.get_data_loader(batch_size=args.batch_size * 4, shuffle=False)
-    test_dataloader = test_dataset.get_data_loader(batch_size=args.batch_size * 4, shuffle=False)
+    dev_dataloader = dev_dataset.get_data_loader(batch_size=args.batch_size * 2, shuffle=False)
+    test_dataloader = test_dataset.get_data_loader(batch_size=args.batch_size * 2, shuffle=False)
     train_dataloader = train_dataset.get_data_loader(batch_size=args.batch_size, shuffle=True)
 
     model4ner=Qwen4NER(args)
