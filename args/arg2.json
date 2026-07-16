@@ -1,0 +1,32 @@
+{
+    "num_epochs": 4,
+    "batch_size": 2,
+    "lr":2e-05,
+    "weight_decay": 0.01,
+    "device": "cuda:0",
+    "model_name": "Qwen2.5-0.5B-Instruct",
+    "model_dir": "../autodl-tmp/model/Qwen2.5-0.5B-Instruct",
+    "dropout_rate": 0.2,
+    "embedding_dim": 896,
+    "data_path": "./data/",
+    "max_length": 380,
+    "max_new_tokens": 300,
+    "patience":10,
+    "monitor": "val_f1",
+    "delta":0.0001,
+    "save_dir": "../autodl-tmp/checkpoint/",
+    "warmup_steps": 500,
+    "eps":1e-8,
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "method": "lora",
+    "lora_target_modules": [ 
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj"
+        ],
+    "prompt": "You are an expert in biomedical named entity recognition. Your task is to identify gene and protein entities from the given English biomedical text. The entity type is defined as follows: GENE includes gene or protein names, such as gene products, enzymes, receptors, antibodies, cytokines, and similar molecules. Please strictly output the results in the following JSON format: {\"entities\": [{\"name\": \"entity name\", \"type\": \"entity type\"}]}. You must output only a valid JSON string with no additional content. Only use the predefined entity type \"GENE\"; do not recognize or include any other entity types. Only extract entities that clearly belong to the GENE category as defined, and do not include any reasoning or explanations—just the JSON output. The input sentence is provided below.",
+    "template_name": "qwen"
+}

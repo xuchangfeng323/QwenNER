@@ -81,6 +81,7 @@ class Trainer:
                 loss=outputs.loss
                 del outputs
                 del input_ids
+                del labels
                 del attention_mask
                 loss.backward()
                 
