@@ -33,6 +33,7 @@ class Qwen4NER(nn.Module):
             base_model = AutoModelForCausalLM.from_pretrained(
                 self.config.model_dir,
                 trust_remote_code=True,
+                torch_dtype=torch.bfloat16,
                 
 
             )
