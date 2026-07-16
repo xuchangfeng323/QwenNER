@@ -276,7 +276,7 @@ class Arguments:
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
     def _set_tokenizer(self):
-        self.tokenizer = AutoTokenizer.from_pretrained(self.args_dict['model_dir'], trust_remote_code=True,use_fast=False,padding_side='left',)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.args_dict['model_dir'], trust_remote_code=True,)
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
 

@@ -1,6 +1,6 @@
 {
     "num_epochs": 4,
-    "batch_size": 2,
+    "batch_size": 4,
     "lr":2e-05,
     "weight_decay": 0.01,
     "device": "cuda:0",
@@ -25,7 +25,10 @@
         "q_proj",
         "k_proj",
         "v_proj",
-        "o_proj"
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
         ],
     "prompt": "You are an expert in biomedical named entity recognition. Your task is to identify gene and protein entities from the given English biomedical text. The entity type is defined as follows: GENE includes gene or protein names, such as gene products, enzymes, receptors, antibodies, cytokines, and similar molecules. Please strictly output the results in the following JSON format: {\"entities\": [{\"name\": \"entity name\", \"type\": \"entity type\"}]}. You must output only a valid JSON string with no additional content. Only use the predefined entity type \"GENE\"; do not recognize or include any other entity types. Only extract entities that clearly belong to the GENE category as defined, and do not include any reasoning or explanations—just the JSON output. The input sentence is provided below.",
     "template_name": "qwen"

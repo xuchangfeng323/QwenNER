@@ -18,4 +18,5 @@ h = W_0 x + \frac{\alpha}{r} BAx
 $$
 ### QLoRA
 QLoRA在微调之前，先对预训练模型进行量化，再进行微调。
+
 # 人类反馈强化学习RHLF

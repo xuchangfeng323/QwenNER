@@ -144,6 +144,16 @@ class Trainer:
                 generated_ids = self.model.generate(input_ids, attention_mask=attention_mask,use_cache=True,max_new_tokens=self.config.max_new_tokens,pad_token_id=self.model.config.pad_token_id,eos_token_id=self.model.config.eos_token_id)
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
+                if step == 0:
+                    print(f"\n{'='*60}")
+                    print(f"[DEBUG eval] 模型生成示例 (前3条):")
+                    print(f"{'='*60}")
+                    for i, r in enumerate(response[:3]):
+                        print(f"  [{i}] 原始文本: {texts[i][:100]}...")
+                        print(f"  [{i}] 模型输出: {repr(r)}")
+                        print(f"  [{i}] 真实标签: {entities[i]}")
+                        print()
+                    print(f"{'='*60}\n")
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]
                 
                 self.metrics.add_entities(pred_entities_batch, entities, texts)
