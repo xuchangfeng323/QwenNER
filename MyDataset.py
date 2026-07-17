@@ -72,9 +72,6 @@ class bc2gmDataset(Dataset):
             output_attention_masks_list.append(output_enc["attention_mask"])
             max_len_train = max(max_len_train, len(input_ids)+len(output_ids))
             max_len_eval = max(max_len_eval, len(input_ids))
-
-        
-
         padded_input_ids, padded_masks, padded_labels = [], [], []
         for input_ids, attention_mask, label, output_ids, output_attention_mask in zip(input_ids_list, input_attention_masks_list, labels_list, output_list, output_attention_masks_list):
             if self.is_train:
