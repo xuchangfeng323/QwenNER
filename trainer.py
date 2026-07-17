@@ -146,7 +146,7 @@ class Trainer:
                 generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(input_ids, generated_ids)]
                 response = self.config.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
     
-                
+                pred_entities_batch = [self.metrics.parse_json(r) for r in response]
                 self.metrics.add_entities(pred_entities_batch, entities, texts)
         results = self.metrics.get_results()
         print(results)
