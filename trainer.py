@@ -47,7 +47,6 @@ class Trainer:
                 "model": self.config.model_name,
                 "weight_decay": self.config.weight_decay,
                 "device": self.config.device,
-                "embedding_dim": self.config.embedding_dim,
                 "data_path": self.config.data_path,
                 "max_length": self.config.max_length,
                 "patience": self.config.patience,

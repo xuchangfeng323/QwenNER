@@ -38,7 +38,7 @@ class Predictor:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--arg', type=str, default='./args/arg1.json')
-    parser.add_argument('--weight', type=str, default='../autodl-tmp/checkpoint/exp1/')
+    parser.add_argument('--weight', type=str, default='../autodl-tmp/checkpoint/exp1/best_model')
     parser.add_argument('--text', type=str, default='Using the same approach we have shown that hFIRE binds the stimulatory proteins Sp1 and Sp3 in addition to CBF')
     # truth: hFIRE(GENE), Sp1(GENE), Sp3(GENE), CBF(GENE)
     args = parser.parse_args()
