@@ -35,6 +35,6 @@ $$
 \hat{q}_i = \underset{j}{\arg\min} \left| Q_j^{\text{map}} - T_i \right|
 $$
 
-再对每组的缩放因子 $c_{\max}$ 进行量化（Double Quantization），每256个 $c_{\max}$ 为一组，量化为 FP8。
+再对每组的缩放因子 $c_{\max}$ 进行量化（Double Quantization），每256个 $c_{\max}$ 为一组，对称量化为 FP8。
 
 # 人类反馈强化学习（RLHF）
