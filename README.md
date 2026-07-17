@@ -1,6 +1,6 @@
 # QwenNER — 基于 Qwen 大模型的命名实体识别
 
-使用 Qwen2.5-7B 大语言模型，通过 QLoRA / LoRA 在 BC2GM数据集上进行命名实体识别（NER）。
+使用 Qwen2.5-7B-Instruct 模型，通过 QLoRA / LoRA 在 BC2GM数据集上进行命名实体识别（NER）。
 
 ## 项目结构
 
@@ -102,7 +102,7 @@ python predict.py \
 [{"entities": [{"name": "hFIRE", "type": "GENE"}, {"name": "Sp1", "type": "GENE"}, {"name": "Sp3", "type": "GENE"}, {"name": "CBF", "type": "GENE"}]}]
 ```
 
-## 📊 数据集
+## 数据集
 
 
 数据格式：
