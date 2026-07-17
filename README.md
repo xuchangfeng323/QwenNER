@@ -1,8 +1,8 @@
-# QwenNER — 基于 Qwen 大模型的生物医学命名实体识别
+# QwenNER — 基于 Qwen 大模型的命名实体识别
 
 使用 Qwen2.5-7B 大语言模型，通过 QLoRA / LoRA 在 BC2GM数据集上进行命名实体识别（NER）。
 
-## 📁 项目结构
+## 项目结构
 
 ```
 QwenNER/
@@ -57,7 +57,6 @@ python download_model.py
     "dropout_rate": 0.2,
     "model_name": "Qwen2.5-7B-Instruct",
     "model_dir": "../autodl-tmp/model/Qwen2.5-7B-Instruct",
-    "embedding_dim": 896,
     "data_path": "./data/",
     "method": "qlora",
     "lora_r": 16,

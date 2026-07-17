@@ -23,5 +23,7 @@ QLoRA在微调之前，先对预训练模型进行量化，再进行微调。
 $$ 
 q_i = \frac{1}{2} \left( Q_X \left( \frac{i}{2^k + 1} \right) + Q_X \left( \frac{i+1}{2^k + 1} \right) \right) 
 $$
-其中 $Q_X$ 是分位数函数
+其中 $Q_X$ 是分位数函数，得出Q_Map。
+^Q = \^Q = \underset{j=0}{\overset{2n}{\arg\min}} \left| Q_j^{\text{map}} - \frac{T_i}{N} \right|，计算出量化值q_i。
+
 # 人类反馈强化学习RHLF
