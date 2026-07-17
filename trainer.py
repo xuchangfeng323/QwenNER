@@ -64,6 +64,9 @@ class Trainer:
         write_log(self.log_dir, {"config": self.config.get_args_dict()})
         for epoch in range(self.num_epochs):
             self.model.train()
+            self.model.config.use_cache = False
+            self.model.gradient_checkpointing_enable()
+            self.model.enable_input_require_grads()
             total_train_loss = 0
             progress_bar = tqdm(traindataLoader, desc=f"Epoch {epoch + 1}/{self.num_epochs} [Train]", position=0, leave=True)
             for step, batch in enumerate(progress_bar):
@@ -131,7 +134,7 @@ class Trainer:
 
         desc = "Evaluation" if not is_test else "Testing"
         progress_bar = tqdm(dataLoader, desc=desc, position=0, leave=True)
-        
+        self.model.config.use_cache = True
         with torch.no_grad():
             for batch in progress_bar:
                 input_ids=batch["input_ids"]
