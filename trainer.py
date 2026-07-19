@@ -65,8 +65,7 @@ class Trainer:
         for epoch in range(self.num_epochs):
             self.model.train()
             self.model.config.use_cache = False
-            self.model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
-            self.model.enable_input_require_grads()
+            torch.cuda.empty_cache()
             total_train_loss = 0
             progress_bar = tqdm(traindataLoader, desc=f"Epoch {epoch + 1}/{self.num_epochs} [Train]", position=0, leave=True)
             for step, batch in enumerate(progress_bar):
