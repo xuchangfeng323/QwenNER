@@ -109,6 +109,7 @@ class Trainer:
                 "train/loss_epoch": avg_train_loss
             }, step=epoch)
             results_dict = self.eval(epoch, devdataLoader)
+            torch.cuda.empty_cache()  
             f1 = results_dict['micro_avg']['f1']
             log_dict = {
                 "epoch": epoch + 1,
@@ -130,8 +131,8 @@ class Trainer:
 
         if is_test:
             del self.model
-            torch.cuda.empty_cache()
             self.model = self.model_config.load_adapter(self.early_stop.best_model_path)
+            torch.cuda.empty_cache()  
         self.model.eval()
         self.model = self.model.to(self.device)
 
@@ -153,6 +154,8 @@ class Trainer:
     
                 pred_entities_batch = [self.metrics.parse_json(r) for r in response]
                 self.metrics.add_entities(pred_entities_batch, entities, texts)
+                del input_ids, attention_mask, generated_ids, response
+                del pred_entities_batch
         results = self.metrics.get_results()
         print(results)
         results_dict = self.metrics.get_result_dict()
