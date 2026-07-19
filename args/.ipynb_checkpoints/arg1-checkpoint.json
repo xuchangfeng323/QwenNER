@@ -8,7 +8,7 @@
     "model_dir": "../autodl-tmp/model/Qwen2.5-7B-Instruct",
     "dropout_rate": 0.2,
     "data_path": "./data/",
-    "max_length": 256,
+    "max_length": 380,
     "max_new_tokens": 300,
     "patience":10,
     "monitor": "val_f1",

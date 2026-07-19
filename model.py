@@ -39,7 +39,6 @@ class Qwen4NER(nn.Module):
             )
             base_model.config.pad_token_id = self.config.tokenizer.pad_token_id
             base_model.config.eos_token_id = self.config.tokenizer.eos_token_id
-
             self.base_model = base_model
             self.model = get_peft_model(base_model, lora_config)
 
@@ -60,7 +59,9 @@ class Qwen4NER(nn.Module):
             base_model.config.pad_token_id = self.config.tokenizer.pad_token_id
             base_model.config.eos_token_id = self.config.tokenizer.eos_token_id
             base_model = prepare_model_for_kbit_training(base_model)
+            
             self.base_model = base_model
+
             self.model = get_peft_model(base_model, lora_config)
 
         else:
